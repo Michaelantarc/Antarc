@@ -33,15 +33,13 @@ def save_json(filepath, data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 def is_valid_character_anilist(term: str, cache: dict) -> bool:
-    """Verifica no cache local ou consulta a AniList API se a palavra é um personagem real."""
+    """Valida no cache local ou consulta a AniList API para confirmar se o termo é um personagem real."""
     if not term or len(term) < 2:
         return False
 
-    # Se já está no cache, retorna a resposta salva (True para Personagem, False para Marca/Ruído)
     if term in cache:
         return cache[term]
 
-    # Consulta a API pública da AniList
     query = '''
     query ($search: String) {
       Character(search: $search) {
@@ -65,12 +63,11 @@ def is_valid_character_anilist(term: str, cache: dict) -> bool:
     except Exception:
         pass
 
-    # Se a API não encontrou um personagem com este nome exato
     cache[term] = False
     return False
 
 def extract_character_candidates(title: str) -> list:
-    """Remove avisos comerciais e retorna palavras candidatas a nome de personagem."""
+    """Extrai palavras do título removendo termos puramente comerciais."""
     cleaned = title
     for term in COMMERCIAL_NOISE:
         cleaned = re.sub(term, " ", cleaned, flags=re.IGNORECASE)
@@ -78,7 +75,7 @@ def extract_character_candidates(title: str) -> list:
     return [w.strip() for w in cleaned.split() if len(w.strip()) >= 2]
 
 def clean_figure_title(title: str) -> str:
-    """Limpa condições comerciais para agrupar o anúncio da figure específica."""
+    """Limpa condições comerciais para preservar a identificação do anúncio da figura."""
     cleaned = title
     for term in COMMERCIAL_NOISE:
         cleaned = re.sub(term, "", cleaned, flags=re.IGNORECASE)
@@ -91,7 +88,7 @@ def process_rankings(items_list, cache):
     for item in items_list:
         raw_title = item.get("name", "")
 
-        # 1. Ranking de Personagem (Validação via AniList / Cache)
+        # 1. Validação de Personagem via AniList / Cache
         candidates = extract_character_candidates(raw_title)
         found_char = None
 
@@ -204,15 +201,14 @@ async def main():
     print(f"\nBusca concluída! {new_items_count} novas vendas catalogadas nesta rodada.")
     print(f"Total no banco de dados: {len(history)} figuras.")
 
-    save_history(HISTORY_FILE, history)
+    save_json(HISTORY_FILE, history)
 
-    # Processa os rankings e atualiza o README e o Cache
     all_items = list(history.values())
     dates = [datetime.fromisoformat(data["first_seen"]) for data in history.values()]
     days_tracked = (max(dates) - min(dates)).days + 1 if dates else 1
 
     top_chars, top_figs = process_rankings(all_items, cache)
-    save_json(CACHE_FILE, cache)  # Salva o aprendizado da AniList no cache local
+    save_json(CACHE_FILE, cache)
 
     readme_content = generate_readme_markdown(len(history), top_chars, top_figs, days_tracked)
 
