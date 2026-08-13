@@ -1,13 +1,17 @@
 import asyncio
-import re
 import os
+import re
 import requests
+from types import SimpleNamespace
 from mercapi import Mercapi
 from rapidfuzz import process, fuzz
 
 # Tokens do Telegram vindos das variáveis do GitHub Actions
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
+# Objeto compatível com a exigência interna do mercapi (.name)
+STATUS_SOLD_OUT = SimpleNamespace(name="STATUS_SOLD_OUT")
 
 # Palavras para remover dos títulos em japonês para melhorar o agrupamento
 NOISE_WORDS = [
@@ -78,12 +82,12 @@ def send_telegram_ranking(ranking_data):
 async def main():
     mercapi = Mercapi()
     
-    # Usa 'query' para o termo de busca no mercapi
+    # Busca itens VENDIDOS na faixa de 1.000 a 10.000 Ienes
     results = await mercapi.search(
         query="フィギュア",
         price_min=1000,
         price_max=10000,
-        status=["status_sold_out"]
+        status=[STATUS_SOLD_OUT]
     )
 
     if results.items:
