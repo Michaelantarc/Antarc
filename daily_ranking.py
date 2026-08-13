@@ -33,7 +33,6 @@ def save_json(filepath, data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 def is_valid_character_anilist(term: str, cache: dict) -> bool:
-    """Valida no cache local ou consulta a AniList API para confirmar se o termo é um personagem real."""
     if not term or len(term) < 2:
         return False
 
@@ -67,7 +66,6 @@ def is_valid_character_anilist(term: str, cache: dict) -> bool:
     return False
 
 def extract_character_candidates(title: str) -> list:
-    """Extrai palavras do título removendo termos puramente comerciais."""
     cleaned = title
     for term in COMMERCIAL_NOISE:
         cleaned = re.sub(term, " ", cleaned, flags=re.IGNORECASE)
@@ -75,7 +73,6 @@ def extract_character_candidates(title: str) -> list:
     return [w.strip() for w in cleaned.split() if len(w.strip()) >= 2]
 
 def clean_figure_title(title: str) -> str:
-    """Limpa condições comerciais para preservar a identificação do anúncio da figura."""
     cleaned = title
     for term in COMMERCIAL_NOISE:
         cleaned = re.sub(term, "", cleaned, flags=re.IGNORECASE)
@@ -88,7 +85,6 @@ def process_rankings(items_list, cache):
     for item in items_list:
         raw_title = item.get("name", "")
 
-        # 1. Validação de Personagem via AniList / Cache
         candidates = extract_character_candidates(raw_title)
         found_char = None
 
@@ -107,7 +103,6 @@ def process_rankings(items_list, cache):
                 else:
                     character_counts[found_char] = 1
 
-        # 2. Ranking de Figure Específica
         fig_title = clean_figure_title(raw_title)
         if fig_title:
             if not figure_counts:
@@ -152,8 +147,9 @@ async def main():
     today_iso = now.isoformat()
     cutoff_date = now - timedelta(days=60)
 
+    # Se for a 1ª vez busca 100 páginas, senão busca 20 páginas (~2.000 itens) a cada 6h
     is_first_run = len(history) == 0
-    max_pages = 100 if is_first_run else 10
+    max_pages = 100 if is_first_run else 20
 
     history = {
         item_id: data for item_id, data in history.items()
@@ -161,10 +157,7 @@ async def main():
     }
 
     mercapi = Mercapi()
-    if is_first_run:
-        print("🚀 Primeira execução detectada! Realizando busca estendida (100 páginas)...")
-    else:
-        print("🔄 Execução diária de rotina (até 10 páginas)...")
+    print(f"🔄 Executando varredura (até {max_pages} páginas / ~{max_pages*100} itens)...")
     
     res = await mercapi.search(
         query="フィギュア",
@@ -191,11 +184,12 @@ async def main():
                 new_items_count += 1
 
         try:
+            await asyncio.sleep(1.5)  # Pausa de segurança entre páginas
             res = await res.next_page()
             if not res or not res.items:
                 break
         except Exception as e:
-            print(f"Fim dos resultados disponíveis na página {pages_scanned}: {e}")
+            print(f"Fim dos resultados na página {pages_scanned}: {e}")
             break
 
     print(f"\nBusca concluída! {new_items_count} novas vendas catalogadas nesta rodada.")
