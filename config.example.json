@@ -1,8 +1,9 @@
 {
-  "search_query": "figure nome do personagem",
-  "must_include_words": ["nome do personagem", "figure"],
+{
+  "search_query": "初音ミク ワールドイズマイン",
+  "must_include_words": ["ミク"],
   "must_exclude_words": ["quebrada", "danificada", "réplica"],
-  "price_max": 8000,
+  "price_max": 15000,
   "telegram_bot_token": "",
   "telegram_chat_id": ""
 }
