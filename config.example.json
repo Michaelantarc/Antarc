@@ -1,0 +1,8 @@
+{
+  "search_query": "figure nome do personagem",
+  "must_include_words": ["nome do personagem", "figure"],
+  "must_exclude_words": ["quebrada", "danificada", "réplica"],
+  "price_max": 8000,
+  "telegram_bot_token": "",
+  "telegram_chat_id": ""
+}
