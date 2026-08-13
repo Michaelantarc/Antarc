@@ -78,9 +78,9 @@ def send_telegram_ranking(ranking_data):
 async def main():
     mercapi = Mercapi()
     
-    # Busca itens VENDIDOS (status_sold_out) na faixa de 1.000 a 10.000 Ienes
+    # Usa 'query' para o termo de busca no mercapi
     results = await mercapi.search(
-        kw="フィギュア",
+        query="フィギュア",
         price_min=1000,
         price_max=10000,
         status=["status_sold_out"]
