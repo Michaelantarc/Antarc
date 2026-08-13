@@ -52,6 +52,14 @@ def clean_figure_title(title: str) -> str:
     cleaned = re.sub(r"【\s*】|\[\s*\]", "", cleaned)
     return cleaned.strip()
 
+def process_extract(query, choices, threshold):
+    if not choices:
+        return None, 0, None
+    res = process.extractOne(query, choices, scorer=fuzz.token_sort_ratio)
+    if res and res[1] >= threshold:
+        return res[0], res[1], None
+    return None, 0, None
+
 def process_rankings(items_list):
     character_counts = {}
     figure_counts = {}
@@ -85,14 +93,6 @@ def process_rankings(items_list):
     top_chars = sorted(character_counts.items(), key=lambda x: x[1], reverse=True)[:10]
     top_figs = sorted(figure_counts.items(), key=lambda x: x[1], reverse=True)[:10]
     return top_chars, top_figs
-
-def process_extract(query, choices, threshold):
-    if not choices:
-        return None, 0, None
-    res = process.extractOne(query, choices, scorer=fuzz.token_sort_ratio)
-    if res and res[1] >= threshold:
-        return res[0], res[1], None
-    return None, 0, None
 
 def generate_readme_markdown(total_sales, top_chars, top_figs, days_tracked):
     now_str = datetime.now(timezone.utc).strftime("%d/%m/%Y às %H:%M UTC")
@@ -143,8 +143,9 @@ async def main():
     while res and res.items and pages_scanned < 10:
         pages_scanned += 1
         for item in res.items:
-            item_id = str(item.id)
-            if item_id not in history:
+            # Garante a extração correta do ID usando id_ ou id
+            item_id = str(getattr(item, "id_", getattr(item, "id", "")))
+            if item_id and item_id not in history:
                 history[item_id] = {
                     "name": item.name,
                     "price": item.price,
@@ -168,7 +169,6 @@ async def main():
     # Calcula e atualiza o README
     all_items = list(history.values())
     
-    # Calcula quantos dias de histórico já existem
     dates = [datetime.fromisoformat(data["first_seen"]) for data in history.values()]
     days_tracked = (max(dates) - min(dates)).days + 1 if dates else 1
 
