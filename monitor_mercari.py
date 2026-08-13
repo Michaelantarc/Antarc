@@ -62,7 +62,7 @@ def is_title_valid(title: str, config: dict) -> bool:
 
 
 def process_telegram_commands(config):
-    """Lê e processa comandos enviados pelo Telegram (/add, /remover, /lista)."""
+    """Lê e processa comandos enviados pelo Telegram (/lista)."""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         return False
 
@@ -90,7 +90,6 @@ def process_telegram_commands(config):
 
             parts = raw_text.split(" ", 1)
             cmd = parts[0].lower().split("@")[0]
-            args = parts[1].strip() if len(parts) > 1 else ""
 
             if cmd == "/lista":
                 query = config.get("search_query", "Não configurada")
@@ -172,14 +171,22 @@ async def main():
             if not item_id:
                 continue
 
-            # Aplica a filtragem avançada antes de notificar
             if not is_title_valid(item.name, config):
                 continue
 
             current_price = item.price
             is_new = item_id not in state
-            old_price = state[item_id].get("price") if not is_new else None
-            price_changed = not is_new and old_price != current_price
+
+            # Suporte retrocompatível para registros numéricos ou dicionários
+            old_price = None
+            if not is_new:
+                old_data = state[item_id]
+                if isinstance(old_data, dict):
+                    old_price = old_data.get("price")
+                elif isinstance(old_data, (int, float)):
+                    old_price = old_data
+
+            price_changed = not is_new and old_price is not None and old_price != current_price
 
             if is_new or price_changed:
                 send_telegram_notification(item, is_new=is_new, price_changed=price_changed)
