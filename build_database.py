@@ -88,6 +88,17 @@ def scrape_hobbysearch(keyword: str):
     save_db(db)
     print(f"✅ Concluído! {added_count} figuras salvas no banco de dados.")
 
+Python
 if __name__ == "__main__":
-    # Teste com uma franquia/personagem
-    scrape_hobbysearch("アンタークチサイト") # Antarcticite
+    # Lista de personagens/franquias para montar o banco inicial
+    keywords = [
+        "初音ミク",             # Hatsune Miku
+        "アンタークチサイト",     # Antarcticite
+        "ルフィ",               # Luffy
+        "ガッツ",               # Guts (Berserk)
+        "チェンソーマン",         # Chainsaw Man
+        "アルティメットまどか"    # Ultimate Madoka
+    ]
+
+    for kw in keywords:
+        scrape_hobbysearch(kw)
