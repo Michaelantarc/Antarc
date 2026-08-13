@@ -1,1 +1,26 @@
-{}
+{
+  "1": {
+    "name_jp": "初音ミク",
+    "name_en": "Item 1"
+  },
+  "2": {
+    "name_jp": "アンタークチサイト",
+    "name_en": "Item 2"
+  },
+  "3": {
+    "name_jp": "ルフィ",
+    "name_en": "Item 3"
+  },
+  "4": {
+    "name_jp": "ガッツ",
+    "name_en": "Item 4"
+  },
+  "5": {
+    "name_jp": "チェンソーマン",
+    "name_en": "Item 5"
+  },
+  "6": {
+    "name_jp": "アルティメットまどか",
+    "name_en": "Item 6"
+  }
+}
