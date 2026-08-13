@@ -115,14 +115,22 @@ def scrape_hobbysearch(keyword: str):
 
 
 if __name__ == "__main__":
-    keywords = [
-        "初音ミク",           # Hatsune Miku
-        "アンタークチサイト",  # Antarcticite
-        "ルフィ",             # Luffy
-        "ガッツ",             # Guts (Berserk)
-        "チェンソーマン",       # Chainsaw Man
-        "アルティメットまどか"  # Ultimate Madoka
-    ]
+    CHARACTER_INDEX_FILE = "database/character_index.json"
 
-    for kw in keywords:
+    keywords = []
+
+    # Se o catálogo existir, lê os nomes em japonês de lá
+    if os.path.exists(CHARACTER_INDEX_FILE):
+        with open(CHARACTER_INDEX_FILE, "r", encoding="utf-8") as f:
+            catalog = json.load(f)
+            keywords = [char_data["name_jp"] for char_data in catalog.values() if char_data.get("name_jp")]
+
+    # Lista de fallback caso o catálogo ainda não tenha sido gerado
+    if not keywords:
+        keywords = ["初音ミク", "アンタークチサイト", "ルフィ", "ガッツ", "チェンソーマン"]
+
+    print(f"📊 Processando {len(keywords)} termos do catálogo de personagens...")
+
+    # Limite de execução por rodada para não exceder o tempo do GitHub Actions
+    for kw in keywords[:30]:  # Altere para processar mais por rodada se necessário
         scrape_hobbysearch(kw)
