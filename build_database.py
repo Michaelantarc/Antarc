@@ -27,17 +27,15 @@ def save_json(filepath, data):
 
 
 def fetch_top_300_characters():
-    """Consulta a API da AniList com a sintaxe GraphQL rigorosamente corrigida."""
     catalog = {}
     url = "https://graphql.anilist.co"
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
 
-    # Aqui estava o erro crasso: A API usa 'FAVOURITES' (com U) e exige colchetes
     query = """
     query ($page: Int, $perPage: Int) {
       Page(page: $page, perPage: $perPage) {
@@ -53,113 +51,85 @@ def fetch_top_300_characters():
     """
 
     print("🌐 Baixando ranking dos Top 300 Personagens via AniList API...")
-
     for page in range(1, 7):
         variables = {"page": page, "perPage": 50}
         try:
-            res = requests.post(
-                url,
-                json={"query": query, "variables": variables},
-                headers=headers,
-                timeout=10,
-            )
-
+            res = requests.post(url, json={"query": query, "variables": variables}, headers=headers, timeout=10)
             if res.status_code == 200:
                 data = res.json()
                 characters = data.get("data", {}).get("Page", {}).get("characters", [])
-
                 for char in characters:
                     char_id = str(char["id"])
                     name_en = char.get("name", {}).get("full", "")
                     name_jp = char.get("name", {}).get("native", "")
-
                     if name_jp:
-                        catalog[char_id] = {
-                            "anilist_id": char_id,
-                            "name_en": name_en,
-                            "name_jp": name_jp,
-                        }
-            else:
-                # Log detalhado caso a API rejeite novamente
-                print(f"⚠️ Erro na página {page} da AniList (HTTP {res.status_code}): {res.text[:200]}")
-
+                        catalog[char_id] = {"anilist_id": char_id, "name_en": name_en, "name_jp": name_jp}
             time.sleep(0.3)
-        except Exception as e:
-            print(f"⚠️ Erro de conexão ao consultar AniList na página {page}: {e}")
-
-    if not catalog:
-        print("⚠️ AniList indisponível. Aplicando lista de emergência...")
-        fallback_names = [
-            "初音ミク", "アンタークチサイト", "ルフィ", "ガッツ", "チェンソーマン", "アルティメットまどか",
-        ]
-        for idx, name in enumerate(fallback_names, 1):
-            catalog[str(idx)] = {"name_jp": name, "name_en": f"Item {idx}"}
+        except Exception:
+            pass
 
     save_json(CATALOG_FILE, catalog)
-    print(f"✅ Índice de personagens pronto! Total: {len(catalog)} personagens cadastrados.\n")
     return catalog
 
 
 def scrape_hobbysearch(keyword: str, db: dict):
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
 
+    # RESTAURADO: Parâmetros corretos da busca de figures
     base_url = "https://www.1999.co.jp/search"
-    params = {"typ1_c": "101", "searchkey": keyword}
+    params = {
+        "typ1_c": "101",
+        "cat": "figure",
+        "target": "Item",
+        "searchkey": keyword
+    }
 
-    print(f"🔎 Buscando figures no Hobby Search para: '{keyword}'...")
+    print(f"🔎 Buscando figures para: '{keyword}'...")
     try:
         res = requests.get(base_url, params=params, headers=headers, timeout=10)
         if res.status_code != 200:
-            print(f"❌ Erro HTTP {res.status_code} para '{keyword}'")
             return
-    except Exception as e:
-        print(f"❌ Falha de conexão para '{keyword}': {e}")
+    except Exception:
         return
 
     soup = BeautifulSoup(res.text, "html.parser")
 
+    # RESTAURADO: O Extrator de links correto
     product_links = set()
     for a_tag in soup.find_all("a", href=True):
         href = a_tag["href"]
-        match = re.search(r"\b(10\d{6,7})\b", href)
+        match = re.search(r"/(?:eng/)?(10\d{6,7})", href)
         if match:
             item_id = match.group(1)
             product_links.add((item_id, f"https://www.1999.co.jp/{item_id}"))
 
-    added_count = 0
+    print(f"  📌 {len(product_links)} resultados encontrados.")
 
+    added_count = 0
     for item_id, item_url in list(product_links)[:8]:
         try:
-            time.sleep(0.3)
+            time.sleep(0.4)
             detail_res = requests.get(item_url, headers=headers, timeout=5)
             if detail_res.status_code != 200:
                 continue
 
             detail_soup = BeautifulSoup(detail_res.text, "html.parser")
-
             title_el = detail_soup.select_one("h1, .ItemTitle, title")
-            title_jp = ""
-            if title_el:
-                title_jp = title_el.text.strip()
-                title_jp = re.sub(
-                    r"\s*\|\s*HobbySearch.*$", "", title_jp, flags=re.IGNORECASE
-                )
+            title_jp = title_el.text.strip() if title_el else ""
+            title_jp = re.sub(r"\s*\|\s*HobbySearch.*$", "", title_jp, flags=re.IGNORECASE)
 
             if not title_jp:
                 continue
 
             page_text = detail_soup.get_text()
-
-            # Código JAN (13 dígitos)
+            
             jan_code = None
             jan_match = re.search(r"\b(45\d{11}|49\d{11})\b", page_text)
             if jan_match:
                 jan_code = jan_match.group(1)
 
-            # Preço em Ienes (MSRP)
             msrp_yen = None
             price_match = re.search(r"¥\s*([\d,]+)", page_text)
             if price_match:
@@ -174,11 +144,10 @@ def scrape_hobbysearch(keyword: str, db: dict):
                 "url": item_url,
             }
             added_count += 1
-
         except Exception:
             continue
 
-    print(f"  └ Salvas {added_count} figuras para '{keyword}'. Total acumulado no banco: {len(db)}.")
+    print(f"  └ Salvas {added_count} figuras. Banco agora tem: {len(db)} itens.")
 
 
 if __name__ == "__main__":
@@ -190,11 +159,7 @@ if __name__ == "__main__":
         catalog = fetch_top_300_characters()
         scraped_progress = []  
 
-    all_keywords = [
-        char_data["name_jp"]
-        for char_data in catalog.values()
-        if char_data.get("name_jp")
-    ]
+    all_keywords = [char_data["name_jp"] for char_data in catalog.values() if char_data.get("name_jp")]
     pending_keywords = [kw for kw in all_keywords if kw not in scraped_progress]
 
     print(f"📊 Progresso do Banco: {len(scraped_progress)}/{len(all_keywords)} personagens já processados.")
@@ -203,7 +168,7 @@ if __name__ == "__main__":
         print("🎉 Todos os 300 personagens do catálogo já foram raspados!")
     else:
         batch = pending_keywords[:25]
-        print(f"🔄 Executando raspagem para o lote atual de {len(batch)} personagens...\n")
+        print(f"🔄 Executando raspagem para o lote de {len(batch)} personagens...\n")
 
         for kw in batch:
             scrape_hobbysearch(kw, db)
@@ -211,4 +176,4 @@ if __name__ == "__main__":
 
         save_json(DB_FILE, db)
         save_json(PROGRESS_FILE, scraped_progress)
-        print(f"\n✅ Lote concluído com sucesso! Banco atualizado em '{DB_FILE}'.")
+        print(f"\n✅ Lote concluído com sucesso!")
