@@ -38,6 +38,19 @@
       ],
       "price_min": 15000,
       "price_max": 60000
+    },
+    {
+      "name": "宝石の国 アンタークチサイト",
+      "search_query": "宝石の国 アンタークチサイト",
+      "must_include_groups": [],
+      "must_exclude_words": [
+        "レプリカ",
+        "海賊版",
+        "ジャンク",
+        "破損"
+      ],
+      "price_min": 15000,
+      "price_max": 60000
     }
   ]
 }
