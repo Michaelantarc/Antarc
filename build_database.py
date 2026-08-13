@@ -24,35 +24,47 @@ def save_db(data):
 
 
 def scrape_hobbysearch(keyword: str):
-    """Busca figures no 1999.co.jp e extrai JAN, preço de tabela (MSRP) e fabricante."""
+    """Busca figures no 1999.co.jp e extrai JAN, preço de tabela (MSRP) e título."""
     db = load_db()
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-    url = f"https://www.1999.co.jp/search?typ1_c=102&cat=gundam&target=Item&searchkey={keyword}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
 
-    print(f"🔎 Pesquisando no Hobby Search por: '{keyword}'...")
+    # URL oficial da categoria Figures no Hobby Search
+    base_url = "https://www.1999.co.jp/search"
+    params = {
+        "typ1_c": "101",
+        "cat": "figure",
+        "target": "Item",
+        "searchkey": keyword
+    }
+
+    print(f"\n🔎 Pesquisando no Hobby Search por: '{keyword}'...")
     try:
-        res = requests.get(url, headers=headers, timeout=10)
+        res = requests.get(base_url, params=params, headers=headers, timeout=10)
         if res.status_code != 200:
-            print(f"❌ Erro na requisição: {res.status_code}")
+            print(f"❌ Erro HTTP {res.status_code} ao buscar '{keyword}'")
             return
     except Exception as e:
-        print(f"❌ Erro de conexão: {e}")
+        print(f"❌ Erro de conexão ao buscar '{keyword}': {e}")
         return
 
     soup = BeautifulSoup(res.text, "html.parser")
-    items = soup.select(".MasterGrid_itemInfo__3L6sX, .Table_MasterGrid__29A_d tr")
+
+    # Localiza os links de produtos de figures (padrão /10xxxxxx)
+    product_links = set()
+    for a_tag in soup.find_all("a", href=True):
+        href = a_tag["href"]
+        match = re.search(r"/(?:eng/)?(10\d{6})", href)
+        if match:
+            item_id = match.group(1)
+            product_links.add((item_id, f"https://www.1999.co.jp/{item_id}"))
+
+    print(f"  📌 {len(product_links)} produtos encontrados para '{keyword}'.")
 
     added_count = 0
 
-    for item in items:
-        link = item.select_one("a")
-        if not link or "1999.co.jp/" not in link.get("href", ""):
-            continue
-
-        item_url = link["href"]
-        if not item_url.startswith("http"):
-            item_url = f"https://www.1999.co.jp{item_url}"
-
+    for item_id, item_url in product_links:
         try:
             detail_res = requests.get(item_url, headers=headers, timeout=5)
             if detail_res.status_code != 200:
@@ -60,21 +72,30 @@ def scrape_hobbysearch(keyword: str):
 
             detail_soup = BeautifulSoup(detail_res.text, "html.parser")
 
-            title_el = detail_soup.select_one("h1, .ItemTitle")
-            title_jp = title_el.text.strip() if title_el else ""
+            title_el = detail_soup.select_one("h1, .ItemTitle, title")
+            title_jp = ""
+            if title_el:
+                title_jp = title_el.text.strip()
+                title_jp = re.sub(r"\s*\|\s*HobbySearch.*$", "", title_jp, flags=re.IGNORECASE)
 
-            jan_code = None
+            if not title_jp:
+                continue
+
             page_text = detail_soup.get_text()
+
+            # Extrai Código JAN (13 dígitos)
+            jan_code = None
             jan_match = re.search(r"\b(45\d{11}|49\d{11})\b", page_text)
             if jan_match:
                 jan_code = jan_match.group(1)
 
+            # Extrai Preço Original de Tabela (MSRP em Ienes)
             msrp_yen = None
             price_match = re.search(r"¥\s*([\d,]+)", page_text)
             if price_match:
                 msrp_yen = int(price_match.group(1).replace(",", ""))
 
-            key = jan_code if jan_code else item_url.split("/")[-1]
+            key = jan_code if jan_code else f"HS_{item_id}"
 
             db[key] = {
                 "jan_code": jan_code,
@@ -83,23 +104,24 @@ def scrape_hobbysearch(keyword: str):
                 "url": item_url,
             }
             added_count += 1
-            print(f"  + Salvo: {title_jp[:30]}... | MSRP: ¥{msrp_yen}")
+            print(f"  + Salvo: {title_jp[:40]}... | MSRP: ¥{msrp_yen}")
 
-        except Exception:
+        except Exception as e:
+            print(f"  ⚠️ Erro ao processar item {item_id}: {e}")
             continue
 
     save_db(db)
-    print(f"✅ Concluído! {added_count} figuras salvas no banco de dados.")
+    print(f"✅ Concluído para '{keyword}'! Total no banco: {len(db)} figuras.")
 
 
 if __name__ == "__main__":
     keywords = [
-        "初音ミク",  # Hatsune Miku
+        "初音ミク",           # Hatsune Miku
         "アンタークチサイト",  # Antarcticite
-        "ルフィ",  # Luffy
-        "ガッツ",  # Guts (Berserk)
-        "チェンソーマン",  # Chainsaw Man
-        "アルティメットまどか",  # Ultimate Madoka
+        "ルフィ",             # Luffy
+        "ガッツ",             # Guts (Berserk)
+        "チェンソーマン",       # Chainsaw Man
+        "アルティメットまどか"  # Ultimate Madoka
     ]
 
     for kw in keywords:
