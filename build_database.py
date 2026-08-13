@@ -2,7 +2,7 @@ import json
 import os
 import re
 import time
-import requests
+import cloudscraper
 from bs4 import BeautifulSoup
 
 DB_FILE = "database/figures.json"
@@ -29,11 +29,13 @@ def save_json(filepath, data):
 def fetch_top_300_characters():
     catalog = {}
     url = "https://graphql.anilist.co"
+    scraper = cloudscraper.create_scraper()
+    
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
+    
     query = """
     query ($page: Int, $perPage: Int) {
       Page(page: $page, perPage: $perPage) {
@@ -47,11 +49,12 @@ def fetch_top_300_characters():
       }
     }
     """
+
     print("🌐 Baixando ranking dos Top 300 Personagens via AniList API...")
     for page in range(1, 7):
         variables = {"page": page, "perPage": 50}
         try:
-            res = requests.post(url, json={"query": query, "variables": variables}, headers=headers, timeout=15)
+            res = scraper.post(url, json={"query": query, "variables": variables}, headers=headers, timeout=15)
             if res.status_code == 200:
                 data = res.json()
                 characters = data.get("data", {}).get("Page", {}).get("characters", [])
@@ -70,19 +73,13 @@ def fetch_top_300_characters():
 
 
 def scrape_mfc(keyword: str, db: dict):
-    """Busca figures no MyFigureCollection (MFC) de forma segura."""
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Referer": "https://myfigurecollection.net/",
-    }
-
-    # URL de busca de itens no MFC por palavra-chave
+    # Cria o scraper inteligente que passa pela Cloudflare
+    scraper = cloudscraper.create_scraper()
     search_url = f"https://myfigurecollection.net/browse.dialog.php?mode=search&page=1&keyword={keyword}"
 
     print(f"🔎 Buscando no MFC para: '{keyword}'...")
     try:
-        res = requests.get(search_url, headers=headers, timeout=15)
+        res = scraper.get(search_url, timeout=15)
         if res.status_code != 200:
             print(f"    [!] Erro HTTP {res.status_code} na busca do MFC")
             return
@@ -96,7 +93,7 @@ def scrape_mfc(keyword: str, db: dict):
     print(f"  📌 {len(items)} resultados encontrados no MFC.")
 
     added_count = 0
-    for item in items[:6]:  # Pega até 6 itens por personagem
+    for item in items[:6]:
         item_href = item.get("href", "")
         if not item_href.startswith("/item/"):
             continue
@@ -105,8 +102,8 @@ def scrape_mfc(keyword: str, db: dict):
         item_id = item_href.split("/")[2]
 
         try:
-            time.sleep(0.8) # Pausa respeitosa para o servidor do MFC
-            detail_res = requests.get(item_url, headers=headers, timeout=15)
+            time.sleep(1.0)
+            detail_res = scraper.get(item_url, timeout=15)
             if detail_res.status_code != 200:
                 continue
 
@@ -121,7 +118,6 @@ def scrape_mfc(keyword: str, db: dict):
             jan_code = None
             msrp_yen = None
 
-            # Varre os campos de dados da ficha técnica do MFC
             for data_row in detail_soup.select(".form-field"):
                 label = data_row.select_one("label")
                 value = data_row.select_one(".form-value")
@@ -148,7 +144,7 @@ def scrape_mfc(keyword: str, db: dict):
                 "url": item_url,
             }
             added_count += 1
-        except Exception as e:
+        except Exception:
             continue
 
     print(f"  └ Salvas {added_count} figuras. Banco agora tem: {len(db)} itens.")
@@ -172,7 +168,7 @@ if __name__ == "__main__":
         print("🎉 Todos os 300 personagens do catálogo já foram raspados!")
     else:
         batch = pending_keywords[:25]
-        print(f"🔄 Executando raspagem para o lote de {len(batch)} personagens (via MFC)...\n")
+        print(f"🔄 Executando raspagem para o lote de {len(batch)} personagens (via MFC com Cloudscraper)...\n")
 
         for kw in batch:
             scrape_mfc(kw, db)
