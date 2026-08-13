@@ -1,197 +1,107 @@
-"""
-Monitor de preço de figures no Mercari Japão (jp.mercari.com)
----------------------------------------------------------------
-Busca por um termo (ex: nome da figure), filtra os resultados por
-palavras que devem/não devem aparecer no título, e envia uma
-notificação no Telegram quando encontra um anúncio dentro do preço
-desejado.
-
-Cada execução faz UMA busca e termina (não fica rodando em loop).
-Para checar várias vezes por dia, agende a execução com cron,
-Task Scheduler do Windows, ou GitHub Actions (veja o README.md).
-
-Uso:
-    python monitor_mercari.py
-"""
-
 import asyncio
 import json
-import logging
 import os
-import unicodedata
-from pathlib import Path
-
 import requests
 from mercapi import Mercapi
-from mercapi.requests.search import SearchRequestData
 
-BASE_DIR = Path(__file__).resolve().parent
-CONFIG_PATH = BASE_DIR / "config.json"
-STATE_PATH = BASE_DIR / "state.json"
+# Detecta se a execução foi disparada manualmente no GitHub Actions
+IS_MANUAL = os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch"
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-)
-log = logging.getLogger("mercari-monitor")
+# Tokens do Telegram configurados nos Secrets do GitHub
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-
-def load_config() -> dict:
-    if not CONFIG_PATH.exists():
-        raise FileNotFoundError(
-            f"Não encontrei {CONFIG_PATH}. Copie config.example.json para "
-            f"config.json e preencha com seus dados."
-        )
-    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        cfg = json.load(f)
-
-    # Permite sobrescrever os dados sensíveis do Telegram via variáveis de
-    # ambiente (usado no GitHub Actions, onde ficam em Secrets em vez de
-    # dentro do config.json commitado no repositório).
-    cfg["telegram_bot_token"] = os.environ.get(
-        "TELEGRAM_BOT_TOKEN", cfg.get("telegram_bot_token", "")
-    )
-    cfg["telegram_chat_id"] = os.environ.get(
-        "TELEGRAM_CHAT_ID", cfg.get("telegram_chat_id", "")
-    )
-
-    if not cfg["telegram_bot_token"] or not cfg["telegram_chat_id"]:
-        raise ValueError(
-            "telegram_bot_token / telegram_chat_id não configurados "
-            "(nem no config.json, nem nas variáveis de ambiente)."
-        )
-
-    return cfg
+STATE_FILE = "state.json"
+CONFIG_FILE = "config.json"
 
 
-def load_state() -> dict:
-    if STATE_PATH.exists():
-        with open(STATE_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+def load_json(filepath, default_value):
+    if os.path.exists(filepath):
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return default_value
+    return default_value
 
 
-def save_state(state: dict) -> None:
-    with open(STATE_PATH, "w", encoding="utf-8") as f:
-        json.dump(state, f, ensure_ascii=False, indent=2)
+def save_json(filepath, data):
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def normalize(text: str) -> str:
-    """Normaliza texto para comparação (minúsculas, acentos/largura unicode)."""
-    return unicodedata.normalize("NFKC", text).lower()
+def send_telegram_notification(item, is_new=True, price_changed=False):
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print(f"[AVISO] Telegram não configurado. Item encontrado: {item.name}")
+        return
 
-
-def item_matches(name: str, must_include_groups, must_exclude) -> bool:
-    """Confere se o título do anúncio bate com os critérios.
-
-    must_include_groups: lista de grupos, onde cada grupo é uma lista de
-    variações equivalentes (ex: ["ワールドイズマイン", "world is mine"]).
-    O item só passa se, PARA CADA GRUPO, pelo menos uma das variações
-    aparecer no título. Isso lida bem com vendedores que escrevem o nome
-    do produto de formas diferentes.
-
-    must_exclude: lista simples — se qualquer uma dessas palavras aparecer
-    no título, o item é descartado.
-    """
-    norm_name = normalize(name)
-
-    for group in must_include_groups:
-        variants = [normalize(w) for w in group if w.strip()]
-        if variants and not any(v in norm_name for v in variants):
-            return False
-
-    for word in must_exclude:
-        if normalize(word) in norm_name:
-            return False
-
-    return True
-
-
-def send_telegram(token: str, chat_id: str, text: str) -> None:
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    resp = requests.post(
-        url,
-        data={
-            "chat_id": chat_id,
-            "text": text,
-            "parse_mode": "HTML",
-            "disable_web_page_preview": False,
-        },
-        timeout=15,
-    )
-    if resp.status_code != 200:
-        log.error("Falha ao enviar mensagem no Telegram: %s", resp.text)
+    # Define a tag do topo da mensagem
+    if IS_MANUAL:
+        header = "🔴 <b>[VERIFICAÇÃO MANUAL]</b>"
+    elif is_new:
+        header = "✨ <b>[NOVO ANÚNCIO]</b>"
+    elif price_changed:
+        header = "📉 <b>[MUDANÇA DE PREÇO]</b>"
     else:
-        log.info("Notificação enviada no Telegram.")
+        header = "🔍 <b>[ANÚNCIO]</b>"
 
-
-async def check_search(mercapi: Mercapi, cfg: dict, state: dict) -> int:
-    query = cfg["search_query"]
-    price_min = cfg.get("price_min") or None
-    price_max = cfg["price_max"]
-    must_include_groups = cfg.get("must_include_groups", [])
-    must_exclude = [w for w in cfg.get("must_exclude_words", []) if w.strip()]
-    token = cfg["telegram_bot_token"]
-    chat_id = cfg["telegram_chat_id"]
-
-    log.info(
-        "Buscando '%s' com preço entre ¥%s e ¥%s",
-        query, price_min or 0, price_max,
+    message = (
+        f"{header}\n\n"
+        f"<b>{item.name}</b>\n"
+        f"<b>Preço:</b> ¥{item.price:,}\n\n"
+        f"🔗 <a href='https://jp.mercari.com/item/{item.id}'>Ver no Mercari</a>"
     )
 
-    results = await mercapi.search(
-        query,
-        price_min=price_min,
-        price_max=price_max,
-        status=[SearchRequestData.Status.STATUS_ON_SALE],
-    )
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message,
+        "parse_mode": "HTML",
+        "disable_web_page_preview": False,
+    }
 
-    matches = 0
-    new_alerts = 0
-    already_notified = 0
-    for item in results.items:
-        if item.is_no_price:
-            continue
-        if not item_matches(item.name, must_include_groups, must_exclude):
-            continue
-
-        matches += 1
-        last_notified_price = state.get(item.id_)
-
-        # Notifica se for item novo ou se o preço mudou (pra cima ou pra
-        # baixo) desde a última notificação. Só não reenvia se o preço
-        # continua exatamente igual ao já notificado (evita spam idêntico).
-        if last_notified_price is None or item.price != last_notified_price:
-            item_url = f"https://jp.mercari.com/item/{item.id_}"
-            msg = (
-                f"🔔 <b>Figure encontrada no Mercari!</b>\n"
-                f"{item.name}\n"
-                f"💴 ¥{item.price:,}\n"
-                f"{item_url}"
-            )
-            send_telegram(token, chat_id, msg)
-            state[item.id_] = item.price
-            new_alerts += 1
-            log.info("Novo alerta: %s (¥%s)", item.name, item.price)
-        else:
-            already_notified += 1
-
-    log.info(
-        "Busca finalizada. %s anúncio(s) dentro dos critérios "
-        "(%s novo(s)/preço alterado -> notificado(s), %s já notificado(s) antes com o mesmo preço).",
-        matches, new_alerts, already_notified,
-    )
-    return matches
-
-
-async def main() -> None:
-    cfg = load_config()
-    state = load_state()
-    mercapi = Mercapi()
     try:
-        await check_search(mercapi, cfg, state)
-    finally:
-        save_state(state)
+        requests.post(url, json=payload)
+    except Exception as e:
+        print(f"Erro ao enviar notificação no Telegram: {e}")
+
+
+async def main():
+    mercapi = Mercapi()
+
+    # Carrega as configurações de busca e o estado salvo
+    config = load_json(CONFIG_FILE, {"keywords": ["フィギュア"], "price_min": 1000, "price_max": 10000})
+    state = load_json(STATE_FILE, {})
+
+    keywords = config.get("keywords", ["フィギュア"])
+    price_min = config.get("price_min", None)
+    price_max = config.get("price_max", None)
+
+    for kw in keywords:
+        results = await mercapi.search(
+            kw=kw,
+            price_min=price_min,
+            price_max=price_max
+        )
+
+        for item in results.items:
+            item_id = str(item.id)
+            current_price = item.price
+
+            is_new = item_id not in state
+            old_price = state[item_id].get("price") if not is_new else None
+            price_changed = not is_new and old_price != current_price
+
+            # Regra de disparo:
+            # - Se for MANUAL (workflow_dispatch): envia tudo.
+            # - Se for AUTOMÁTICO (cron): envia apenas se for novo ou mudou de preço.
+            if IS_MANUAL or is_new or price_changed:
+                send_telegram_notification(item, is_new=is_new, price_changed=price_changed)
+
+            # Atualiza o estado
+            state[item_id] = {"price": current_price}
+
+    save_json(STATE_FILE, state)
 
 
 if __name__ == "__main__":
