@@ -21,8 +21,8 @@ def save_catalog(data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def fetch_top_characters(pages=2, per_page=50):
-    """Consulta a API do AniList e extrai os personagens mais populares com nome em Japonês."""
+def fetch_top_characters(pages=6, per_page=50):
+    """Consulta a API do AniList e extrai o Top 300 personagens com nome em Japonês."""
     catalog = load_catalog()
     url = "https://graphql.anilist.co"
 
@@ -48,7 +48,7 @@ def fetch_top_characters(pages=2, per_page=50):
     }
     """
 
-    print(f"🚀 Baixando top personagens do AniList ({pages * per_page} itens)...")
+    print(f"🚀 Baixando Top {pages * per_page} personagens do AniList...")
 
     added_count = 0
 
@@ -68,7 +68,6 @@ def fetch_top_characters(pages=2, per_page=50):
                 name_en = char.get("name", {}).get("full")
                 name_jp = char.get("name", {}).get("native")
 
-                # Pega a mídia principal (anime/mangá)
                 media_nodes = char.get("media", {}).get("nodes", [])
                 anime_en = media_nodes[0].get("title", {}).get("userPreferred") if media_nodes else "Desconhecido"
                 anime_jp = media_nodes[0].get("title", {}).get("native") if media_nodes else ""
@@ -89,9 +88,9 @@ def fetch_top_characters(pages=2, per_page=50):
             print(f"⚠️ Erro ao processar página {page}: {e}")
 
     save_catalog(catalog)
-    print(f"✅ Catálogo de personagens atualizado! Total: {len(catalog)} personagens cadastrados.")
+    print(f"✅ Catálogo de personagens atualizado! Total: {len(catalog)} personagens no índice.")
 
 
 if __name__ == "__main__":
-    # Puxa as 2 primeiras páginas (Top 100 personagens)
-    fetch_top_characters(pages=2, per_page=50)
+    # 6 páginas x 50 itens = Top 300
+    fetch_top_characters(pages=6, per_page=50)
