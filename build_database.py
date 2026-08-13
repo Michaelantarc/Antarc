@@ -27,7 +27,7 @@ def save_json(filepath, data):
 
 
 def fetch_top_300_characters():
-    """Consulta a API do AniList e gera o índice com os 300 personagens mais populares."""
+    """Consulta a API da AniList com a sintaxe GraphQL corrigida e gera o índice do Top 300."""
     catalog = {}
     url = "https://graphql.anilist.co"
 
@@ -37,22 +37,15 @@ def fetch_top_300_characters():
         "Accept": "application/json",
     }
 
+    # Query corrigida com suporte estrito aos tipos da API
     query = """
     query ($page: Int, $perPage: Int) {
       Page(page: $page, perPage: $perPage) {
-        characters(sort: FAVORITES_DESC) {
+        characters(sort: [FAVORITES_DESC]) {
           id
           name {
             full
             native
-          }
-          media(sort: POPULARITY_DESC, perPage: 1) {
-            nodes {
-              title {
-                userPreferred
-                native
-              }
-            }
           }
         }
       }
@@ -61,40 +54,48 @@ def fetch_top_300_characters():
 
     print("🌐 Baixando ranking dos Top 300 Personagens via AniList API...")
 
-    for page in range(1, 7):  # 6 páginas x 50 itens = 300
+    for page in range(1, 7):  # 6 páginas x 50 itens = 300 personagens
         variables = {"page": page, "perPage": 50}
         try:
-            res = requests.post(url, json={"query": query, "variables": variables}, headers=headers, timeout=10)
+            res = requests.post(
+                url,
+                json={"query": query, "variables": variables},
+                headers=headers,
+                timeout=10,
+            )
+
             if res.status_code == 200:
                 data = res.json()
                 characters = data.get("data", {}).get("Page", {}).get("characters", [])
 
                 for char in characters:
                     char_id = str(char["id"])
-                    name_en = char.get("name", {}).get("full")
-                    name_jp = char.get("name", {}).get("native")
-
-                    media_nodes = char.get("media", {}).get("nodes", [])
-                    anime_en = media_nodes[0].get("title", {}).get("userPreferred") if media_nodes else "Desconhecido"
-                    anime_jp = media_nodes[0].get("title", {}).get("native") if media_nodes else ""
+                    name_en = char.get("name", {}).get("full", "")
+                    name_jp = char.get("name", {}).get("native", "")
 
                     if name_jp:
                         catalog[char_id] = {
                             "anilist_id": char_id,
                             "name_en": name_en,
                             "name_jp": name_jp,
-                            "anime_en": anime_en,
-                            "anime_jp": anime_jp,
                         }
             else:
-                print(f"⚠️ Resposta da AniList na página {page}: HTTP {res.status_code}")
+                print(f"⚠️ Erro na página {page} da AniList (HTTP {res.status_code}): {res.text[:150]}")
+
             time.sleep(0.3)
         except Exception as e:
-            print(f"⚠️ Erro ao consultar AniList na página {page}: {e}")
+            print(f"⚠️ Erro de conexão ao consultar AniList na página {page}: {e}")
 
     if not catalog:
-        print("⚠️ AniList indisponível. Aplicando lista básica de emergência...")
-        fallback_names = ["初音ミク", "アンタークチサイト", "ルフィ", "ガッツ", "チェンソーマン", "アルティメットまどか"]
+        print("⚠️ AniList indisponível. Aplicando lista de emergência...")
+        fallback_names = [
+            "初音ミク",
+            "アンタークチサイト",
+            "ルフィ",
+            "ガッツ",
+            "チェンソーマン",
+            "アルティメットまどか",
+        ]
         for idx, name in enumerate(fallback_names, 1):
             catalog[str(idx)] = {"name_jp": name, "name_en": f"Item {idx}"}
 
@@ -104,14 +105,14 @@ def fetch_top_300_characters():
 
 
 def scrape_hobbysearch(keyword: str, db: dict):
-    """Busca figures de um personagem específico no Hobby Search e atualiza o dict do DB."""
+    """Busca figures no Hobby Search para um personagem e salva os detalhes no dicionário."""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
         "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
     }
 
     base_url = "https://www.1999.co.jp/search"
-    params = {"searchkey": keyword}
+    params = {"typ1_c": "101", "searchkey": keyword}
 
     print(f"🔎 Buscando figures no Hobby Search para: '{keyword}'...")
     try:
@@ -125,11 +126,11 @@ def scrape_hobbysearch(keyword: str, db: dict):
 
     soup = BeautifulSoup(res.text, "html.parser")
 
-    # Coleta os links de produtos de figures (/10xxxxxx)
+    # Extrai IDs de produtos do Hobby Search (padrão de 7 a 8 dígitos iniciado por 10)
     product_links = set()
     for a_tag in soup.find_all("a", href=True):
         href = a_tag["href"]
-        match = re.search(r"/(?:eng/)?(10\d{6,7})", href)
+        match = re.search(r"\b(10\d{6,7})\b", href)
         if match:
             item_id = match.group(1)
             product_links.add((item_id, f"https://www.1999.co.jp/{item_id}"))
@@ -138,7 +139,7 @@ def scrape_hobbysearch(keyword: str, db: dict):
 
     for item_id, item_url in list(product_links)[:8]:
         try:
-            time.sleep(0.4)
+            time.sleep(0.3)
             detail_res = requests.get(item_url, headers=headers, timeout=5)
             if detail_res.status_code != 200:
                 continue
@@ -149,18 +150,22 @@ def scrape_hobbysearch(keyword: str, db: dict):
             title_jp = ""
             if title_el:
                 title_jp = title_el.text.strip()
-                title_jp = re.sub(r"\s*\|\s*HobbySearch.*$", "", title_jp, flags=re.IGNORECASE)
+                title_jp = re.sub(
+                    r"\s*\|\s*HobbySearch.*$", "", title_jp, flags=re.IGNORECASE
+                )
 
             if not title_jp:
                 continue
 
             page_text = detail_soup.get_text()
 
+            # Código JAN (13 dígitos)
             jan_code = None
             jan_match = re.search(r"\b(45\d{11}|49\d{11})\b", page_text)
             if jan_match:
                 jan_code = jan_match.group(1)
 
+            # Preço em Ienes (MSRP)
             msrp_yen = None
             price_match = re.search(r"¥\s*([\d,]+)", page_text)
             if price_match:
@@ -179,7 +184,9 @@ def scrape_hobbysearch(keyword: str, db: dict):
         except Exception:
             continue
 
-    print(f"  └ Salvas {added_count} figuras para '{keyword}'. Total acumulado no banco: {len(db)}.")
+    print(
+        f"  └ Salvas {added_count} figuras para '{keyword}'. Total acumulado no banco: {len(db)}."
+    )
 
 
 if __name__ == "__main__":
@@ -187,20 +194,29 @@ if __name__ == "__main__":
     catalog = load_json(CATALOG_FILE, {})
     scraped_progress = load_json(PROGRESS_FILE, [])
 
-    # Pega os 300 do AniList se o índice estiver limpo ou contiver apenas a lista de emergência
-    if not catalog or len(catalog) <= 6:
+    # Se o catálogo tiver menos de 10 itens (resultado do erro anterior), força nova busca na AniList
+    if not catalog or len(catalog) <= 10:
         catalog = fetch_top_300_characters()
+        scraped_progress = []  # Reseta o progresso para cobrir a nova lista completa
 
-    all_keywords = [char_data["name_jp"] for char_data in catalog.values() if char_data.get("name_jp")]
+    all_keywords = [
+        char_data["name_jp"]
+        for char_data in catalog.values()
+        if char_data.get("name_jp")
+    ]
     pending_keywords = [kw for kw in all_keywords if kw not in scraped_progress]
 
-    print(f"📊 Progresso do Banco: {len(scraped_progress)}/{len(all_keywords)} personagens já processados.")
+    print(
+        f"📊 Progresso do Banco: {len(scraped_progress)}/{len(all_keywords)} personagens já processados."
+    )
 
     if not pending_keywords:
         print("🎉 Todos os 300 personagens do catálogo já foram raspados!")
     else:
         batch = pending_keywords[:25]
-        print(f"🔄 Executando raspagem para o lote atual de {len(batch)} personagens...\n")
+        print(
+            f"🔄 Executando raspagem para o lote atual de {len(batch)} personagens...\n"
+        )
 
         for kw in batch:
             scrape_hobbysearch(kw, db)
