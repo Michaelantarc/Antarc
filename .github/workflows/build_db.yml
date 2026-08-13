@@ -23,9 +23,8 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install rapidfuzz requests beautifulsoup4
+          pip install cloudscraper rapidfuzz requests beautifulsoup4
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
       # 🚨 Script antigo foi removido daqui! O build_database.py fará tudo sozinho.
       - name: Run Build Figure Database
         run: python build_database.py
