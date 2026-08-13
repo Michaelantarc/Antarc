@@ -1,34 +1,24 @@
-# 📊 SG Figures — Mercado Mercari JP
+# 📊 SG Figures — Ranking de Popularidade de Personagens
 
-> **Última atualização:** 13/08/2026 às 03:53 UTC  
-> **Total de vendas catalogadas:** 120 figuras em 1 dias de histórico acumulado (Faixa: ¥1.000 a ¥10.000).
+> **Última atualização:** 13/08/2026 às 03:56 UTC  
+> **Total de figuras catalogadas:** 1112 vendas acumuladas em 1 dia(s) de monitoramento (Faixa: ¥1.000 a ¥10.000).
 
-## 🏆 Top 10 Personagens / Franquias Mais Vendidos
+## 🏆 Top Personagens Mais Vendidos no Mercari JP
 
-| Rank | Personagem / Franquia | Unidades Vendidas |
+| Rank | Personagem | Unidades Vendidas |
 | :---: | :--- | :---: |
-| 1 | **ドラゴンクエスト** | 19 |
-| 2 | **初音ミク** | 14 |
-| 3 | **ワンピース** | 6 |
-| 4 | **HUNTER×HUNTER** | 5 |
-| 5 | **【】NARUTO** | 4 |
-| 6 | **鬼滅の刃** | 4 |
-| 7 | **ポケモン** | 4 |
-| 8 | **呪術廻戦** | 2 |
-| 9 | **勝利の女神:NIKKE** | 2 |
-| 10 | **ハイキュー!!** | 2 |
-
-## 📦 Top 10 Figures Específicas Mais Vendidas
-
-| Rank | Figura / Anúncio | Unidades Vendidas |
-| :---: | :--- | :---: |
-| 1 | 初音ミク T-most | 6 |
-| 2 | ドラゴンクエスト デフォルメ Vol.1 ふくびき所スペシャル　1 Ⅰ | 4 |
-| 3 | 初音ミク Holiday Memories ゲーム 　箱同封 | 3 |
-| 4 | ドラゴンクエスト　ぷにぷにし隊　3つ | 3 |
-| 5 | ふくびき所スペシャル　デフォルメ　G　ドラクエⅦ | 2 |
-| 6 | ドラゴンクエスト ふくびき所スペシャル Gデフォルメ Ⅷ | 2 |
-| 7 | ドラゴンクエスト ぷにぷにし隊 全4種コンプリート | 2 |
-| 8 | ドラゴンクエスト ふくびき所スペシャル F デフォルメ ドラクエ5 | 2 |
-| 9 | ポケモン スイートクラフトコレクション ニンフィア | 2 |
-| 10 | ドラゴンクエスト ふくびき所スペシャル F　 Ⅳ DⅧ | 2 |
+| **#1** | **初音ミク** | 76 vendas |
+| **#2** | **ドラゴンクエスト** | 69 vendas |
+| **#3** | **ワンピース** | 50 vendas |
+| **#4** | **FUNKO** | 50 vendas |
+| **#5** | **ポケモン** | 29 vendas |
+| **#6** | **NARUTO** | 17 vendas |
+| **#7** | **ドラゴンボールZ** | 17 vendas |
+| **#8** | **HUNTER×HUNTER** | 16 vendas |
+| **#9** | **ALPHA** | 16 vendas |
+| **#10** | **GIGO** | 13 vendas |
+| **#11** | **鬼滅の刃** | 12 vendas |
+| **#12** | **僕のヒーローアカデミア** | 11 vendas |
+| **#13** | **amiibo** | 10 vendas |
+| **#14** | **ROMANCE** | 10 vendas |
+| **#15** | **ハンターハンター** | 9 vendas |
