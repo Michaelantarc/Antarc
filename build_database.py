@@ -54,7 +54,7 @@ def fetch_top_300_characters():
     for page in range(1, 7):
         variables = {"page": page, "perPage": 50}
         try:
-            res = requests.post(url, json={"query": query, "variables": variables}, headers=headers, timeout=10)
+            res = requests.post(url, json={"query": query, "variables": variables}, headers=headers, timeout=15)
             if res.status_code == 200:
                 data = res.json()
                 characters = data.get("data", {}).get("Page", {}).get("characters", [])
@@ -64,7 +64,7 @@ def fetch_top_300_characters():
                     name_jp = char.get("name", {}).get("native", "")
                     if name_jp:
                         catalog[char_id] = {"anilist_id": char_id, "name_en": name_en, "name_jp": name_jp}
-            time.sleep(0.3)
+            time.sleep(0.5)
         except Exception:
             pass
 
@@ -77,7 +77,6 @@ def scrape_hobbysearch(keyword: str, db: dict):
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
 
-    # RESTAURADO: Parâmetros corretos da busca de figures
     base_url = "https://www.1999.co.jp/search"
     params = {
         "typ1_c": "101",
@@ -88,7 +87,7 @@ def scrape_hobbysearch(keyword: str, db: dict):
 
     print(f"🔎 Buscando figures para: '{keyword}'...")
     try:
-        res = requests.get(base_url, params=params, headers=headers, timeout=10)
+        res = requests.get(base_url, params=params, headers=headers, timeout=15)
         if res.status_code != 200:
             return
     except Exception:
@@ -96,7 +95,6 @@ def scrape_hobbysearch(keyword: str, db: dict):
 
     soup = BeautifulSoup(res.text, "html.parser")
 
-    # RESTAURADO: O Extrator de links correto
     product_links = set()
     for a_tag in soup.find_all("a", href=True):
         href = a_tag["href"]
@@ -110,9 +108,10 @@ def scrape_hobbysearch(keyword: str, db: dict):
     added_count = 0
     for item_id, item_url in list(product_links)[:8]:
         try:
-            time.sleep(0.4)
-            detail_res = requests.get(item_url, headers=headers, timeout=5)
+            time.sleep(1.0) # Espera um pouco mais para não tomar bloqueio
+            detail_res = requests.get(item_url, headers=headers, timeout=15)
             if detail_res.status_code != 200:
+                print(f"    [!] Ignorado: HTTP {detail_res.status_code} ({item_url})")
                 continue
 
             detail_soup = BeautifulSoup(detail_res.text, "html.parser")
@@ -121,17 +120,23 @@ def scrape_hobbysearch(keyword: str, db: dict):
             title_jp = re.sub(r"\s*\|\s*HobbySearch.*$", "", title_jp, flags=re.IGNORECASE)
 
             if not title_jp:
+                print(f"    [!] Título não encontrado ({item_url})")
                 continue
 
             page_text = detail_soup.get_text()
             
+            # Puxa o JAN Code
             jan_code = None
             jan_match = re.search(r"\b(45\d{11}|49\d{11})\b", page_text)
             if jan_match:
                 jan_code = jan_match.group(1)
 
+            # Melhorada a busca de preço (acha ¥, Yen, JPY e 円)
             msrp_yen = None
-            price_match = re.search(r"¥\s*([\d,]+)", page_text)
+            price_match = re.search(r"(?:¥|Yen|JPY|価格)\s*:?\s*([\d,]+)", page_text, re.IGNORECASE)
+            if not price_match:
+                price_match = re.search(r"([\d,]+)\s*円", page_text)
+            
             if price_match:
                 msrp_yen = int(price_match.group(1).replace(",", ""))
 
@@ -144,7 +149,9 @@ def scrape_hobbysearch(keyword: str, db: dict):
                 "url": item_url,
             }
             added_count += 1
-        except Exception:
+        except Exception as e:
+            # Agora ele avisa exatamente por que falhou, em vez de pular escondido!
+            print(f"    [!] Falha no item {item_id}: {type(e).__name__} - {e}")
             continue
 
     print(f"  └ Salvas {added_count} figuras. Banco agora tem: {len(db)} itens.")
