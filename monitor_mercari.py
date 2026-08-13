@@ -81,16 +81,29 @@ def normalize(text: str) -> str:
     return unicodedata.normalize("NFKC", text).lower()
 
 
-def item_matches(name: str, must_include, must_exclude) -> bool:
-    """Confere se o título do anúncio contém todas as palavras obrigatórias
-    e nenhuma das palavras proibidas."""
+def item_matches(name: str, must_include_groups, must_exclude) -> bool:
+    """Confere se o título do anúncio bate com os critérios.
+
+    must_include_groups: lista de grupos, onde cada grupo é uma lista de
+    variações equivalentes (ex: ["ワールドイズマイン", "world is mine"]).
+    O item só passa se, PARA CADA GRUPO, pelo menos uma das variações
+    aparecer no título. Isso lida bem com vendedores que escrevem o nome
+    do produto de formas diferentes.
+
+    must_exclude: lista simples — se qualquer uma dessas palavras aparecer
+    no título, o item é descartado.
+    """
     norm_name = normalize(name)
-    for word in must_include:
-        if normalize(word) not in norm_name:
+
+    for group in must_include_groups:
+        variants = [normalize(w) for w in group if w.strip()]
+        if variants and not any(v in norm_name for v in variants):
             return False
+
     for word in must_exclude:
         if normalize(word) in norm_name:
             return False
+
     return True
 
 
@@ -114,33 +127,41 @@ def send_telegram(token: str, chat_id: str, text: str) -> None:
 
 async def check_search(mercapi: Mercapi, cfg: dict, state: dict) -> int:
     query = cfg["search_query"]
+    price_min = cfg.get("price_min") or None
     price_max = cfg["price_max"]
-    must_include = [w for w in cfg.get("must_include_words", []) if w.strip()]
+    must_include_groups = cfg.get("must_include_groups", [])
     must_exclude = [w for w in cfg.get("must_exclude_words", []) if w.strip()]
     token = cfg["telegram_bot_token"]
     chat_id = cfg["telegram_chat_id"]
 
-    log.info("Buscando '%s' com preço até ¥%s", query, price_max)
+    log.info(
+        "Buscando '%s' com preço entre ¥%s e ¥%s",
+        query, price_min or 0, price_max,
+    )
 
     results = await mercapi.search(
         query,
+        price_min=price_min,
         price_max=price_max,
         status=[SearchRequestData.Status.STATUS_ON_SALE],
     )
 
     matches = 0
+    new_alerts = 0
+    already_notified = 0
     for item in results.items:
         if item.is_no_price:
             continue
-        if not item_matches(item.name, must_include, must_exclude):
+        if not item_matches(item.name, must_include_groups, must_exclude):
             continue
 
         matches += 1
         last_notified_price = state.get(item.id_)
 
-        # Só notifica se for item novo ou se o preço caiu ainda mais
-        # desde a última notificação (evita spam repetido).
-        if last_notified_price is None or item.price < last_notified_price:
+        # Notifica se for item novo ou se o preço mudou (pra cima ou pra
+        # baixo) desde a última notificação. Só não reenvia se o preço
+        # continua exatamente igual ao já notificado (evita spam idêntico).
+        if last_notified_price is None or item.price != last_notified_price:
             item_url = f"https://jp.mercari.com/item/{item.id_}"
             msg = (
                 f"🔔 <b>Figure encontrada no Mercari!</b>\n"
@@ -150,9 +171,16 @@ async def check_search(mercapi: Mercapi, cfg: dict, state: dict) -> int:
             )
             send_telegram(token, chat_id, msg)
             state[item.id_] = item.price
+            new_alerts += 1
             log.info("Novo alerta: %s (¥%s)", item.name, item.price)
+        else:
+            already_notified += 1
 
-    log.info("Busca finalizada. %s anúncio(s) dentro dos critérios.", matches)
+    log.info(
+        "Busca finalizada. %s anúncio(s) dentro dos critérios "
+        "(%s novo(s)/preço alterado -> notificado(s), %s já notificado(s) antes com o mesmo preço).",
+        matches, new_alerts, already_notified,
+    )
     return matches
 
 
