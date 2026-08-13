@@ -2,6 +2,9 @@ name: Build Database & Match
 
 on:
   workflow_dispatch:
+  schedule:
+    # Agendamento para rodar sozinho a cada 2 horas
+    - cron: '0 */2 * * *'
 
 jobs:
   build_and_match:
@@ -20,12 +23,10 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install -r requirements.txt
           pip install rapidfuzz requests beautifulsoup4
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Build Character Catalog
-        run: python build_character_catalog.py
-
+      # 🚨 Script antigo foi removido daqui! O build_database.py fará tudo sozinho.
       - name: Run Build Figure Database
         run: python build_database.py
 
