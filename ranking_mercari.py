@@ -3,7 +3,6 @@ import re
 import os
 import requests
 from mercapi import Mercapi
-from mercapi.models import ItemStatus
 from rapidfuzz import process, fuzz
 
 # Tokens do Telegram vindos das variáveis do GitHub Actions
@@ -56,6 +55,12 @@ def group_and_rank(items):
 
 def send_telegram_ranking(ranking_data):
     """Envia o relatório formatado para o Telegram."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print("[AVISO] Telegram não configurado. Exibindo ranking no console:")
+        for idx, (title, count) in enumerate(ranking_data, 1):
+            print(f"{idx}. {title} — {count} vendas")
+        return
+
     message = "<b>📊 Ranking de Figures Vendidas no Mercari JP</b>\n"
     message += "<i>Faixa: ¥1.000 a ¥10.000</i>\n\n"
 
@@ -73,12 +78,12 @@ def send_telegram_ranking(ranking_data):
 async def main():
     mercapi = Mercapi()
     
-    # Busca itens VENDIDOS (SOLD OUT) na faixa de 1.000 a 10.000 Ienes
+    # Busca itens VENDIDOS (status_sold_out) na faixa de 1.000 a 10.000 Ienes
     results = await mercapi.search(
         kw="フィギュア",
         price_min=1000,
         price_max=10000,
-        status=[ItemStatus.ITEM_STATUS_SOLD_OUT]
+        status=["status_sold_out"]
     )
 
     if results.items:
