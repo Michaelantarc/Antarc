@@ -1,13 +1,16 @@
 {
-  "search_query": "初音ミク ワールドイズマイン フィギュア",
-  "must_include_groups": [
-    ["ミク"],
-    ["ワールドイズマイン", "ワーイズ", "world is mine"],
-    ["フィギュア", "figure"]
-  ],
-  "must_exclude_words": ["レプリカ", "海賊版", "ジャンク", "破損"],
-  "price_min": 12000,
-  "price_max": 20000,
-  "telegram_bot_token": "",
-  "telegram_chat_id": ""
+  "targets": [
+    {
+      "name": "Hatsune Miku - World is Mine",
+      "search_query": "初音ミク ワールドイズマイン フィギュア",
+      "must_include_groups": [
+        ["ミク"],
+        ["ワールドイズマイン", "ワーイズ", "world is mine"],
+        ["フィギュア", "figure"]
+      ],
+      "must_exclude_words": ["レプリカ", "海賊版", "ジャンク", "破損"],
+      "price_min": 12000,
+      "price_max": 20000
+    }
+  ]
 }
