@@ -1,0 +1,38 @@
+name: Monitor Mercari
+
+on:
+  schedule:
+    - cron: "0 0,4,8,12,16,20 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  check-price:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Rodar monitor
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python monitor_mercari.py
+
+      - name: Salvar state.json (para não repetir alertas)
+        run: |
+          git config user.name "mercari-monitor-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add state.json
+          git diff --staged --quiet || git commit -m "Atualiza state.json [skip ci]"
+          git push
