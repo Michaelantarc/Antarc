@@ -4,6 +4,8 @@ import os
 import requests
 from mercapi import Mercapi
 
+# Detecta se a execução foi disparada manualmente no GitHub Actions
+IS_MANUAL = os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch"
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
@@ -28,9 +30,7 @@ def save_json(filepath, data):
 
 def send_simple_message(text):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print("[AVISO] Bot Token ou Chat ID não configurados nas variáveis de ambiente.")
         return
-    
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": str(TELEGRAM_CHAT_ID).strip(),
@@ -39,14 +39,12 @@ def send_simple_message(text):
         "disable_web_page_preview": True,
     }
     try:
-        res = requests.post(url, json=payload, timeout=5)
-        print(f"[TELEGRAM] Resposta do envio (Status {res.status_code}): {res.text}")
+        requests.post(url, json=payload, timeout=5)
     except Exception as e:
         print(f"[ERRO TELEGRAM] Falha ao enviar mensagem: {e}")
 
 
 def is_title_valid(title: str, config: dict) -> bool:
-    """Valida se o título atende a todos os grupos de inclusão e não contém termos excluídos."""
     title_lower = title.lower()
 
     exclusions = config.get("must_exclude_words", [])
@@ -63,21 +61,17 @@ def is_title_valid(title: str, config: dict) -> bool:
 
 
 def process_telegram_commands(config):
-    """Lê e processa comandos enviados pelo Telegram (/lista) com logs de depuração."""
     if not TELEGRAM_BOT_TOKEN:
-        print("[TELEGRAM] TELEGRAM_BOT_TOKEN ausente. Pulando verificação de comandos.")
         return False
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getUpdates"
     try:
         res = requests.get(url, timeout=5).json()
         if not res.get("ok"):
-            print(f"[TELEGRAM API ERRO] {res}")
             return False
 
         updates = res.get("result", [])
         if not updates:
-            print("[TELEGRAM] Nenhuma mensagem nova pendente no chat.")
             return False
 
         expected_chat_id = str(TELEGRAM_CHAT_ID).strip() if TELEGRAM_CHAT_ID else ""
@@ -85,19 +79,14 @@ def process_telegram_commands(config):
 
         for update in updates:
             last_update_id = max(last_update_id, update["update_id"])
-            
-            msg = update.get("message") or update.get("edited_message") or update.get("channel_post")
+            msg = update.get("message") or update.get("edited_message")
             if not msg:
                 continue
 
             raw_text = msg.get("text", "").strip()
             incoming_chat_id = str(msg.get("chat", {}).get("id", "")).strip()
 
-            print(f"[DEBUG TELEGRAM] Mensagem recebida: '{raw_text}' | Chat ID Recebido: '{incoming_chat_id}' | Chat ID Esperado: '{expected_chat_id}'")
-
-            # Se o Chat ID não bater com a Secret salva no GitHub
             if expected_chat_id and incoming_chat_id != expected_chat_id:
-                print(f"[AVISO] Chat ID divergente! Ignorando comando...")
                 continue
 
             cmd = raw_text.split(" ", 1)[0].lower().split("@")[0]
@@ -116,7 +105,6 @@ def process_telegram_commands(config):
                 )
                 send_simple_message(msg_info)
 
-        # Confirma a leitura das mensagens
         if last_update_id > 0:
             requests.get(f"{url}?offset={last_update_id + 1}")
 
@@ -124,8 +112,10 @@ def process_telegram_commands(config):
         print(f"[ERRO TELEGRAM COMMANDS] {e}")
 
 
-def send_telegram_notification(item, is_new=True, price_changed=False):
-    if is_new:
+def send_telegram_notification(item, is_manual=False, is_new=True, price_changed=False):
+    if is_manual:
+        header = "🔴 <b>[BUSCA MANUAL / TESTE]</b>"
+    elif is_new:
         header = "✨ <b>[NOVA FIGURE ENCONTRADA]</b>"
     elif price_changed:
         header = "📉 <b>[MUDANÇA DE PREÇO]</b>"
@@ -150,7 +140,6 @@ async def main():
     config = load_json(CONFIG_FILE, {})
     state = load_json(STATE_FILE, {})
 
-    # Processa comandos do Telegram pendentes
     process_telegram_commands(config)
 
     search_query = config.get("search_query", "初音ミク フィギュア")
@@ -165,11 +154,9 @@ async def main():
         price_max=price_max
     )
 
-    is_initial_run = len(state) == 0
-
     if results and results.items:
         valid_items_found = 0
-        new_notifications_sent = 0
+        notifications_sent = 0
 
         for item in results.items:
             item_id = str(getattr(item, "id_", getattr(item, "id", "")))
@@ -193,16 +180,14 @@ async def main():
 
             price_changed = not is_new and old_price is not None and old_price != current_price
 
-            if not is_initial_run and (is_new or price_changed):
-                send_telegram_notification(item, is_new=is_new, price_changed=price_changed)
-                new_notifications_sent += 1
+            # Envia no Telegram se for disparo manual OU se for anúncio novo / mudança de preço no automático
+            if IS_MANUAL or is_new or price_changed:
+                send_telegram_notification(item, is_manual=IS_MANUAL, is_new=is_new, price_changed=price_changed)
+                notifications_sent += 1
 
             state[item_id] = {"price": current_price}
 
-        if is_initial_run:
-            print(f"⚡ Inicialização concluída! {valid_items_found} anúncios cadastrados no estado inicial.")
-
-        print(f"Busca finalizada. Itens válidos: {valid_items_found}. Notificações enviadas: {new_notifications_sent}.")
+        print(f"Busca finalizada. Itens válidos encontrados: {valid_items_found}. Notificações enviadas: {notifications_sent}.")
 
     save_json(STATE_FILE, state)
 
