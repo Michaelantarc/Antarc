@@ -1,36 +1,36 @@
 import json
 import os
 import re
+import time
 import requests
 from bs4 import BeautifulSoup
 
 DB_FILE = "database/figures.json"
+CATALOG_FILE = "database/character_index.json"
+PROGRESS_FILE = "database/scraped_keywords.json"
 
 
-def load_db():
-    if os.path.exists(DB_FILE):
+def load_json(filepath, default):
+    if os.path.exists(filepath):
         try:
-            with open(DB_FILE, "r", encoding="utf-8") as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception:
-            return {}
-    return {}
+            return default
+    return default
 
 
-def save_db(data):
-    os.makedirs(os.path.dirname(DB_FILE), exist_ok=True)
-    with open(DB_FILE, "w", encoding="utf-8") as f:
+def save_json(filepath, data):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    with open(filepath, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def scrape_hobbysearch(keyword: str):
-    """Busca figures no 1999.co.jp e extrai JAN, preço de tabela (MSRP) e título."""
-    db = load_db()
+def scrape_hobbysearch(keyword: str, db: dict):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
 
-    # URL oficial da categoria Figures no Hobby Search
     base_url = "https://www.1999.co.jp/search"
     params = {
         "typ1_c": "101",
@@ -51,7 +51,6 @@ def scrape_hobbysearch(keyword: str):
 
     soup = BeautifulSoup(res.text, "html.parser")
 
-    # Localiza os links de produtos de figures (padrão /10xxxxxx)
     product_links = set()
     for a_tag in soup.find_all("a", href=True):
         href = a_tag["href"]
@@ -64,8 +63,9 @@ def scrape_hobbysearch(keyword: str):
 
     added_count = 0
 
-    for item_id, item_url in product_links:
+    for item_id, item_url in list(product_links)[:10]:  # Limita aos 10 principais resultados por termo
         try:
+            time.sleep(0.5)  # Intervalo de cortesia para não sobrecarregar o servidor
             detail_res = requests.get(item_url, headers=headers, timeout=5)
             if detail_res.status_code != 200:
                 continue
@@ -83,13 +83,11 @@ def scrape_hobbysearch(keyword: str):
 
             page_text = detail_soup.get_text()
 
-            # Extrai Código JAN (13 dígitos)
             jan_code = None
             jan_match = re.search(r"\b(45\d{11}|49\d{11})\b", page_text)
             if jan_match:
                 jan_code = jan_match.group(1)
 
-            # Extrai Preço Original de Tabela (MSRP em Ienes)
             msrp_yen = None
             price_match = re.search(r"¥\s*([\d,]+)", page_text)
             if price_match:
@@ -104,33 +102,36 @@ def scrape_hobbysearch(keyword: str):
                 "url": item_url,
             }
             added_count += 1
-            print(f"  + Salvo: {title_jp[:40]}... | MSRP: ¥{msrp_yen}")
 
-        except Exception as e:
-            print(f"  ⚠️ Erro ao processar item {item_id}: {e}")
+        except Exception:
             continue
 
-    save_db(db)
-    print(f"✅ Concluído para '{keyword}'! Total no banco: {len(db)} figuras.")
+    print(f"  + {added_count} figuras salvas para '{keyword}'. Total no banco: {len(db)}.")
 
 
 if __name__ == "__main__":
-    CHARACTER_INDEX_FILE = "database/character_index.json"
+    db = load_json(DB_FILE, {})
+    catalog = load_json(CATALOG_FILE, {})
+    scraped_progress = load_json(PROGRESS_FILE, [])
 
-    keywords = []
+    all_keywords = [char_data["name_jp"] for char_data in catalog.values() if char_data.get("name_jp")]
 
-    # Se o catálogo existir, lê os nomes em japonês de lá
-    if os.path.exists(CHARACTER_INDEX_FILE):
-        with open(CHARACTER_INDEX_FILE, "r", encoding="utf-8") as f:
-            catalog = json.load(f)
-            keywords = [char_data["name_jp"] for char_data in catalog.values() if char_data.get("name_jp")]
+    # Filtra apenas os termos que ainda não foram buscados
+    pending_keywords = [kw for kw in all_keywords if kw not in scraped_progress]
 
-    # Lista de fallback caso o catálogo ainda não tenha sido gerado
-    if not keywords:
-        keywords = ["初音ミク", "アンタークチサイト", "ルフィ", "ガッツ", "チェンソーマン"]
+    print(f"📊 Total no Catálogo: {len(all_keywords)} | Já processados: {len(scraped_progress)} | Pendentes: {len(pending_keywords)}")
 
-    print(f"📊 Processando {len(keywords)} termos do catálogo de personagens...")
+    if not pending_keywords:
+        print("🎉 Todos os 300 personagens do catálogo já foram processados!")
+    else:
+        # Pega os próximos 30 personagens pendentes por rodada
+        batch = pending_keywords[:30]
+        print(f"🔄 Processando lote atual de {len(batch)} personagens...")
 
-    # Limite de execução por rodada para não exceder o tempo do GitHub Actions
-    for kw in keywords[:30]:  # Altere para processar mais por rodada se necessário
-        scrape_hobbysearch(kw)
+        for kw in batch:
+            scrape_hobbysearch(kw, db)
+            scraped_progress.append(kw)
+
+        save_json(DB_FILE, db)
+        save_json(PROGRESS_FILE, scraped_progress)
+        print(f"\n✅ Lote concluído com sucesso! Salvo em '{DB_FILE}'.")
