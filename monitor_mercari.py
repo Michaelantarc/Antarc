@@ -2,9 +2,12 @@ import asyncio
 import json
 import os
 import requests
+from types import SimpleNamespace
 from mercapi import Mercapi
 
-# Detecta se a execução foi disparada manualmente no GitHub Actions
+# Filtro estrito para capturar APENAS figuras disponíveis à venda
+STATUS_ON_SALE = SimpleNamespace(name="STATUS_ON_SALE")
+
 IS_MANUAL = os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch"
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
@@ -98,7 +101,7 @@ def process_telegram_commands(config):
                 exclusions = config.get("must_exclude_words", [])
                 
                 msg_info = (
-                    f"<b>📋 Monitoramento Ativo:</b>\n\n"
+                    f"<b>📋 Monitoramento Ativo (Somente Disponíveis):</b>\n\n"
                     f"<b>Busca:</b> <code>{query}</code>\n"
                     f"<b>Faixa de Preço:</b> ¥{p_min:,} - ¥{p_max:,}\n"
                     f"<b>Exclusões:</b> {', '.join(exclusions) if exclusions else 'Nenhuma'}"
@@ -114,9 +117,9 @@ def process_telegram_commands(config):
 
 def send_telegram_notification(item, is_manual=False, is_new=True, price_changed=False):
     if is_manual:
-        header = "🔴 <b>[BUSCA MANUAL / TESTE]</b>"
+        header = "🔴 <b>[BUSCA MANUAL / DISPONÍVEL]</b>"
     elif is_new:
-        header = "✨ <b>[NOVA FIGURE ENCONTRADA]</b>"
+        header = "✨ <b>[NOVA FIGURE DISPONÍVEL]</b>"
     elif price_changed:
         header = "📉 <b>[MUDANÇA DE PREÇO]</b>"
     else:
@@ -146,12 +149,14 @@ async def main():
     price_min = config.get("price_min", 12000)
     price_max = config.get("price_max", 20000)
 
-    print(f"🔎 Buscando no Mercari: '{search_query}' (¥{price_min:,} a ¥{price_max:,})...")
+    print(f"🔎 Buscando figuras À VENDA no Mercari: '{search_query}' (¥{price_min:,} a ¥{price_max:,})...")
 
+    # Apenas itens com status STATUS_ON_SALE serão retornados
     results = await mercapi.search(
         query=search_query,
         price_min=price_min,
-        price_max=price_max
+        price_max=price_max,
+        status=[STATUS_ON_SALE]
     )
 
     if results and results.items:
@@ -180,14 +185,13 @@ async def main():
 
             price_changed = not is_new and old_price is not None and old_price != current_price
 
-            # Envia no Telegram se for disparo manual OU se for anúncio novo / mudança de preço no automático
             if IS_MANUAL or is_new or price_changed:
                 send_telegram_notification(item, is_manual=IS_MANUAL, is_new=is_new, price_changed=price_changed)
                 notifications_sent += 1
 
             state[item_id] = {"price": current_price}
 
-        print(f"Busca finalizada. Itens válidos encontrados: {valid_items_found}. Notificações enviadas: {notifications_sent}.")
+        print(f"Busca finalizada. Itens disponíveis válidos: {valid_items_found}. Notificações enviadas: {notifications_sent}.")
 
     save_json(STATE_FILE, state)
 
