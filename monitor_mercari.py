@@ -4,7 +4,6 @@ import os
 import requests
 from mercapi import Mercapi
 
-IS_MANUAL = os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch"
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
@@ -38,13 +37,32 @@ def send_simple_message(text):
         "disable_web_page_preview": True,
     }
     try:
-        requests.post(url, json=payload)
+        requests.post(url, json=payload, timeout=5)
     except Exception as e:
         print(f"Erro ao enviar mensagem simples: {e}")
 
 
+def is_title_valid(title: str, config: dict) -> bool:
+    """Valida se o título atende a todos os grupos de inclusão e não contém termos excluídos."""
+    title_lower = title.lower()
+
+    # 1. Checa palavras proibidas (Exclusões)
+    exclusions = config.get("must_exclude_words", [])
+    for word in exclusions:
+        if word.lower() in title_lower:
+            return False
+
+    # 2. Checa grupos obrigatórios (Pelo menos um termo de cada grupo deve existir)
+    include_groups = config.get("must_include_groups", [])
+    for group in include_groups:
+        if not any(term.lower() in title_lower for term in group):
+            return False
+
+    return True
+
+
 def process_telegram_commands(config):
-    """Lê mensagens enviadas no chat do Telegram e processa comandos (/add, /remover, /lista)."""
+    """Lê e processa comandos enviados pelo Telegram (/add, /remover, /lista)."""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         return False
 
@@ -64,41 +82,27 @@ def process_telegram_commands(config):
         for update in updates:
             last_update_id = update["update_id"]
             msg = update.get("message", {})
-            text = msg.get("text", "").strip()
+            raw_text = msg.get("text", "").strip()
             chat_id = str(msg.get("chat", {}).get("id", ""))
 
-            if chat_id != str(TELEGRAM_CHAT_ID):
+            if chat_id != str(TELEGRAM_CHAT_ID) or not raw_text:
                 continue
 
-            if text.startswith("/add "):
-                new_kw = text[5:].strip()
-                if new_kw and new_kw not in config["keywords"]:
-                    config["keywords"].append(new_kw)
-                    config_modified = True
-                    send_simple_message(f"✅ Termo <b>'{new_kw}'</b> adicionado com sucesso!")
-                elif new_kw in config["keywords"]:
-                    send_simple_message(f"⚠️ O termo <b>'{new_kw}'</b> já está na sua lista.")
+            parts = raw_text.split(" ", 1)
+            cmd = parts[0].lower().split("@")[0]
+            args = parts[1].strip() if len(parts) > 1 else ""
 
-            elif text.startswith("/remover ") or text.startswith("/del "):
-                parts = text.split(" ", 1)
-                if len(parts) > 1:
-                    rem_kw = parts[1].strip()
-                    if rem_kw in config["keywords"]:
-                        config["keywords"].remove(rem_kw)
-                        config_modified = True
-                        send_simple_message(f"🗑️ Termo <b>'{rem_kw}'</b> removido com sucesso!")
-                    else:
-                        send_simple_message(f"❌ O termo <b>'{rem_kw}'</b> não foi encontrado na lista.")
-
-            elif text == "/lista":
-                kws = config.get("keywords", [])
-                if kws:
-                    msg_list = "<b>📋 Termos em Monitoramento:</b>\n\n"
-                    for idx, kw in enumerate(kws, 1):
-                        msg_list += f"{idx}. <code>{kw}</code>\n"
-                    send_simple_message(msg_list)
-                else:
-                    send_simple_message("📋 Sua lista de monitoramento está vazia.")
+            if cmd == "/lista":
+                query = config.get("search_query", "Não configurada")
+                p_min = config.get("price_min", "N/A")
+                p_max = config.get("price_max", "N/A")
+                msg_info = (
+                    f"<b>📋 Monitoramento Ativo:</b>\n\n"
+                    f"<b>Busca:</b> <code>{query}</code>\n"
+                    f"<b>Faixa de Preço:</b> ¥{p_min:,} - ¥{p_max:,}\n"
+                    f"<b>Filtros de Exclusão:</b> {', '.join(config.get('must_exclude_words', []))}"
+                )
+                send_simple_message(msg_info)
 
         if last_update_id > 0:
             requests.get(f"{url}?offset={last_update_id + 1}")
@@ -112,13 +116,10 @@ def process_telegram_commands(config):
 
 def send_telegram_notification(item, is_new=True, price_changed=False):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print(f"[AVISO] Telegram não configurado. Item: {item.name}")
         return
 
-    if IS_MANUAL:
-        header = "🔴 <b>[VERIFICAÇÃO MANUAL]</b>"
-    elif is_new:
-        header = "✨ <b>[NOVO ANÚNCIO]</b>"
+    if is_new:
+        header = "✨ <b>[NOVA FIGURE ENCONTRADA]</b>"
     elif price_changed:
         header = "📉 <b>[MUDANÇA DE PREÇO]</b>"
     else:
@@ -142,46 +143,48 @@ def send_telegram_notification(item, is_new=True, price_changed=False):
     }
 
     try:
-        requests.post(url, json=payload)
+        requests.post(url, json=payload, timeout=5)
     except Exception as e:
-        print(f"Erro ao enviar notificação no Telegram: {e}")
+        print(f"Erro ao enviar notificação: {e}")
 
 
 async def main():
     mercapi = Mercapi()
 
-    config = load_json(CONFIG_FILE, {"keywords": ["フィギュア"], "price_min": 1000, "price_max": 10000})
+    config = load_json(CONFIG_FILE, {})
     state = load_json(STATE_FILE, {})
 
-    if process_telegram_commands(config):
-        save_json(CONFIG_FILE, config)
+    process_telegram_commands(config)
 
-    keywords = config.get("keywords", ["フィギュア"])
-    price_min = config.get("price_min", None)
-    price_max = config.get("price_max", None)
+    search_query = config.get("search_query", "初音ミク フィギュア")
+    price_min = config.get("price_min", 12000)
+    price_max = config.get("price_max", 20000)
 
-    for kw in keywords:
-        results = await mercapi.search(
-            query=kw,
-            price_min=price_min,
-            price_max=price_max
-        )
+    results = await mercapi.search(
+        query=search_query,
+        price_min=price_min,
+        price_max=price_max
+    )
 
-        if results and results.items:
-            for item in results.items:
-                item_id = str(getattr(item, "id_", getattr(item, "id", "")))
-                if not item_id:
-                    continue
+    if results and results.items:
+        for item in results.items:
+            item_id = str(getattr(item, "id_", getattr(item, "id", "")))
+            if not item_id:
+                continue
 
-                current_price = item.price
-                is_new = item_id not in state
-                old_price = state[item_id].get("price") if not is_new else None
-                price_changed = not is_new and old_price != current_price
+            # Aplica a filtragem avançada antes de notificar
+            if not is_title_valid(item.name, config):
+                continue
 
-                if IS_MANUAL or is_new or price_changed:
-                    send_telegram_notification(item, is_new=is_new, price_changed=price_changed)
+            current_price = item.price
+            is_new = item_id not in state
+            old_price = state[item_id].get("price") if not is_new else None
+            price_changed = not is_new and old_price != current_price
 
-                state[item_id] = {"price": current_price}
+            if is_new or price_changed:
+                send_telegram_notification(item, is_new=is_new, price_changed=price_changed)
+
+            state[item_id] = {"price": current_price}
 
     save_json(STATE_FILE, state)
 
