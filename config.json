@@ -1,6 +1,6 @@
 {
   "search_query": "初音ミク ワールドイズマイン",
-  "must_include_words": ["ミク"],
+  "must_include_words": ["初音ミク ワールドイズマイン"],
   "must_exclude_words": ["quebrada", "danificada", "réplica"],
   "price_max": 35000,
   "telegram_bot_token": "",
