@@ -1,70 +1,77 @@
 import json
 import os
-from rapidfuzz import process, fuzz
+from collections import Counter
+from rapidfuzz import process
 
 HISTORY_FILE = "history.json"
-DB_FILE = "database/figures.json"
-OUTPUT_REPORT = "database/matched_report.json"
+OUTPUT_REPORT = "database/sales_analytics.json"
+
 
 def load_json(filepath):
     if os.path.exists(filepath):
-        with open(filepath, "r", encoding="utf-8") as f:
-            return json.load(f)
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"❌ Erro ao ler {filepath}: {e}")
     return {}
 
-def run_matching():
-    history = load_json(HISTORY_FILE)
-    db = load_json(DB_FILE)
 
-    if not history or not db:
-        print("❌ Certifique-se de que 'history.json' e 'database/figures.json' possuem dados.")
+def analyze_sales():
+    history = load_json(HISTORY_FILE)
+
+    if not history:
+        print("❌ O arquivo 'history.json' está vazio ou não foi encontrado.")
         return
 
-    db_titles = {key: data.get("title_jp", "") for key, data in db.items() if data.get("title_jp")}
-    
-    matched_results = []
+    print(f"📊 Analisando {len(history):,} registros de vendas no histórico...")
 
-    print(f"🔄 Cruzando {len(history)} vendas com {len(db_titles)} figuras do banco de referência...")
+    total_revenue = 0
+    prices = []
+    items_list = []
 
     for item_id, item_data in history.items():
-        mercari_title = item_data.get("name", "")
-        price_sold = item_data.get("price", 0)
+        # Trata o formato dos dados do histórico
+        if isinstance(item_data, dict):
+            name = item_data.get("name", "Desconhecido")
+            price = item_data.get("price", 0)
+        elif isinstance(item_data, (int, float)):
+            name = "Item Antigo"
+            price = item_data
+        else:
+            continue
 
-        # Busca o título mais parecido no banco oficial
-        match = process.extractOne(
-            mercari_title, 
-            db_titles.values(), 
-            scorer=fuzz.token_set_ratio
-        )
+        total_revenue += price
+        prices.append(price)
+        items_list.append({"id": item_id, "name": name, "price": price})
 
-        # Considera um match válido se a similaridade for >= 80%
-        if match and match[1] >= 80:
-            matched_title = match[0]
-            # Encontra a chave no banco
-            matched_key = [k for k, v in db_titles.items() if v == matched_title][0]
-            ref_data = db[matched_key]
+    if not prices:
+        print("❌ Nenhum preço válido encontrado no histórico.")
+        return
 
-            msrp = ref_data.get("msrp_yen")
-            discount_pct = round(((msrp - price_sold) / msrp) * 100, 1) if msrp else None
+    avg_price = total_revenue / len(prices)
+    max_price = max(prices)
+    min_price = min(prices)
 
-            matched_results.append({
-                "mercari_item_id": item_id,
-                "mercari_title": mercari_title,
-                "price_sold_yen": price_sold,
-                "official_title": matched_title,
-                "official_msrp_yen": msrp,
-                "jan_code": ref_data.get("jan_code"),
-                "discount_vs_msrp_pct": discount_pct,
-                "match_confidence": round(match[1], 1)
-            })
+    report = {
+        "total_items_sold": len(prices),
+        "total_revenue_yen": total_revenue,
+        "average_price_yen": round(avg_price, 2),
+        "highest_price_yen": max_price,
+        "lowest_price_yen": min_price,
+        "sample_top_items": sorted(items_list, key=lambda x: x["price"], reverse=True)[:20]
+    }
 
-    # Salva o relatório de correspondências
+    os.makedirs(os.path.dirname(OUTPUT_REPORT), exist_ok=True)
     with open(OUTPUT_REPORT, "w", encoding="utf-8") as f:
-        json.dump(matched_results, f, ensure_ascii=False, indent=2)
+        json.dump(report, f, ensure_ascii=False, indent=2)
 
-    print(f"\n🎉 Processo finalizado!")
-    print(f"Encontrados {len(matched_results)} cruzamentos exatos/próximos.")
-    print(f"Relatório salvo em: '{OUTPUT_REPORT}'")
+    print("\n🎉 Análise do Histórico Concluída!")
+    print(f"  • Total de Vendas: {len(prices):,}")
+    print(f"  • Faturamento Acumulado: ¥{total_revenue:,}")
+    print(f"  • Preço Médio por Figure: ¥{int(avg_price):,}")
+    print(f"  • Relatório salvo em: '{OUTPUT_REPORT}'")
+
 
 if __name__ == "__main__":
-    run_matching()
+    analyze_sales()
