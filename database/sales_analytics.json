@@ -1,20 +1,10 @@
 {
-  "total_items_sold": 237098,
-  "total_revenue_yen": 839395761,
-  "average_price_yen": 3540.29,
+  "total_items_sold": 238341,
+  "total_revenue_yen": 843159181,
+  "average_price_yen": 3537.62,
   "highest_price_yen": 10000,
   "lowest_price_yen": 1000,
   "sample_top_items": [
-    {
-      "id": "m47751030337",
-      "name": "ブラックジャック　ドームフィギュア　オルゴール",
-      "price": 10000
-    },
-    {
-      "id": "m78212737870",
-      "name": "怪獣郷　ドラコ再生　畜光　未開封 ベアモデル",
-      "price": 10000
-    },
     {
       "id": "m90670401635",
       "name": "銀魂 一番くじ ラストワン賞 坂田銀時",
@@ -103,6 +93,16 @@
     {
       "id": "m99808784770",
       "name": "一番くじ ドラゴンボールGT B賞 超サイヤ人4ベジータ MASTERLISE",
+      "price": 10000
+    },
+    {
+      "id": "m93799335330",
+      "name": "一番くじドラゴンボールGT D賞 トランクス E賞 パン&ギル 2種セット",
+      "price": 10000
+    },
+    {
+      "id": "m66656667607",
+      "name": "一番くじ 銀魂 ラストワン賞 坂田銀時 モノクロカラー",
       "price": 10000
     }
   ]
