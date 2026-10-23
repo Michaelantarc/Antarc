@@ -1,39 +1,39 @@
 # 📊 SG Figures — Mercado Mercari JP
 
-> **Última atualização:** 23/10/2026 às 05:11 UTC  
-> **Total de vendas catalogadas:** 235467 figuras em 60 dia(s) de histórico acumulado (Faixa: ¥1.000 a ¥10.000).
+> **Última atualização:** 23/10/2026 às 12:41 UTC  
+> **Total de vendas catalogadas:** 234816 figuras em 60 dia(s) de histórico acumulado (Faixa: ¥1.000 a ¥10.000).
 
 ## 🏆 Top 15 Personagens Mais Vendidos (Validados AniList)
 
 | Rank | Personagem | Unidades Vendidas |
 | :---: | :--- | :---: |
-| **#1** | **初音ミク** | 7980 vendas |
-| **#2** | **2種** | 5488 vendas |
-| **#3** | **HUNTER×HUNTER** | 5329 vendas |
-| **#4** | **2体** | 3749 vendas |
+| **#1** | **初音ミク** | 8007 vendas |
+| **#2** | **2種** | 5460 vendas |
+| **#3** | **HUNTER×HUNTER** | 5317 vendas |
+| **#4** | **2体** | 3729 vendas |
 | **#5** | **Cute** | 2061 vendas |
-| **#6** | **原神** | 573 vendas |
+| **#6** | **原神** | 570 vendas |
 | **#7** | **ビスケット・オリバ** | 527 vendas |
 | **#8** | **‐リカ** | 410 vendas |
-| **#9** | **HUNTER** | 366 vendas |
-| **#10** | **シーサー** | 335 vendas |
+| **#9** | **HUNTER** | 365 vendas |
+| **#10** | **シーサー** | 333 vendas |
 | **#11** | **最終** | 227 vendas |
-| **#12** | **most** | 211 vendas |
-| **#13** | **すーぱーそに子** | 188 vendas |
+| **#12** | **most** | 210 vendas |
+| **#13** | **すーぱーそに子** | 189 vendas |
 | **#14** | **アグネスタキオン** | 158 vendas |
-| **#15** | **沖田総悟** | 153 vendas |
+| **#15** | **GREEN** | 152 vendas |
 
 ## 📦 Top 10 Figures Específicas / Anúncios Mais Vendidos
 
 | Rank | Anúncio da Figura | Unidades Vendidas |
 | :---: | :--- | :---: |
-| **#1** | 僕のヒーローアカデミア MAXIMATIC  2種 | 602 vendas |
-| **#2** | 一番くじ HUNTER×HUNTER D キルア | 567 vendas |
-| **#3** | 一番くじ 僕のヒーローアカデミア B 爆豪勝己 | 545 vendas |
-| **#4** | Grandista 家庭教師ヒットマンREBORN 沢田綱吉 | 522 vendas |
-| **#5** | 咲-Saki-  GLITTER&GLAMOURS 原村和 外箱 | 444 vendas |
-| **#6** | 一番くじ HUNTER×HUNTER キルア MASTERLISE B | 423 vendas |
-| **#7** | ワンピース grandista バギー シャンクス2体 | 367 vendas |
-| **#8** | HUNTER×HUNTER 一番くじ E　レイザー　本日発送 | 317 vendas |
-| **#9** | FuRyu BiCute Bunnies Figure 貞子 | 312 vendas |
-| **#10** | ちいかわ 人魚の島のひみつ 入場者 チャームミニ | 309 vendas |
+| **#1** | 一番くじ HUNTER×HUNTER E ジン | 548 vendas |
+| **#2** | Grandista 家庭教師ヒットマンREBORN 沢田綱吉 | 522 vendas |
+| **#3** | 送料無料僕のヒーローアカデミア MAXIMATIC  2種 | 498 vendas |
+| **#4** | 咲-Saki-  GLITTER&GLAMOURS 原村和 外箱 | 444 vendas |
+| **#5** | 一番くじ HUNTER×HUNTER A ゴン MASTERLISE | 421 vendas |
+| **#6** | 貞子 BiCute Bunnies Figure バニー | 413 vendas |
+| **#7** | ドラゴンボール ワールドコレクタブル 少年編5 全5種 | 379 vendas |
+| **#8** | ワンピース grandista バギー シャンクス2体 | 367 vendas |
+| **#9** | 初音ミク T-most  2体 | 345 vendas |
+| **#10** | 一番くじ 僕のヒーローアカデミア 緑谷出久  A | 328 vendas |
