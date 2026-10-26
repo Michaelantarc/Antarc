@@ -1,27 +1,27 @@
 # 📊 SG Figures — Mercado Mercari JP
 
-> **Última atualização:** 25/10/2026 às 21:50 UTC  
-> **Total de vendas catalogadas:** 231644 figuras em 60 dia(s) de histórico acumulado (Faixa: ¥1.000 a ¥10.000).
+> **Última atualização:** 26/10/2026 às 04:56 UTC  
+> **Total de vendas catalogadas:** 232670 figuras em 60 dia(s) de histórico acumulado (Faixa: ¥1.000 a ¥10.000).
 
 ## 🏆 Top 15 Personagens Mais Vendidos (Validados AniList)
 
 | Rank | Personagem | Unidades Vendidas |
 | :---: | :--- | :---: |
-| **#1** | **初音ミク** | 8028 vendas |
-| **#2** | **2種** | 5405 vendas |
-| **#3** | **HUNTER×HUNTER** | 5227 vendas |
-| **#4** | **2体** | 3704 vendas |
-| **#5** | **Cute** | 2026 vendas |
-| **#6** | **原神** | 556 vendas |
-| **#7** | **ビスケット・オリバ** | 532 vendas |
-| **#8** | **‐リカ** | 413 vendas |
+| **#1** | **初音ミク** | 8054 vendas |
+| **#2** | **2種** | 5438 vendas |
+| **#3** | **HUNTER×HUNTER** | 5231 vendas |
+| **#4** | **2体** | 3722 vendas |
+| **#5** | **Cute** | 2031 vendas |
+| **#6** | **原神** | 559 vendas |
+| **#7** | **ビスケット・オリバ** | 533 vendas |
+| **#8** | **‐リカ** | 414 vendas |
 | **#9** | **HUNTER** | 362 vendas |
-| **#10** | **シーサー** | 332 vendas |
-| **#11** | **最終** | 220 vendas |
+| **#10** | **シーサー** | 335 vendas |
+| **#11** | **最終** | 221 vendas |
 | **#12** | **most** | 209 vendas |
 | **#13** | **すーぱーそに子** | 182 vendas |
-| **#14** | **アグネスタキオン** | 163 vendas |
-| **#15** | **凪誠士郎** | 160 vendas |
+| **#14** | **アグネスタキオン** | 164 vendas |
+| **#15** | **凪誠士郎** | 161 vendas |
 
 ## 📦 Top 10 Figures Específicas / Anúncios Mais Vendidos
 
@@ -36,4 +36,4 @@
 | **#7** | ドラゴンボール ワールドコレクタブル 少年編5 全5種 | 385 vendas |
 | **#8** | ワンピース grandista バギー シャンクス2体 | 367 vendas |
 | **#9** | 僕のヒーローアカデミア 一番くじ A 緑谷出久 | 341 vendas |
-| **#10** | 初音ミク T-most 2個 | 329 vendas |
+| **#10** | 初音ミク T-most 2個 | 330 vendas |
