@@ -1,40 +1,10 @@
 {
-  "total_items_sold": 231507,
-  "total_revenue_yen": 818381896,
-  "average_price_yen": 3535.02,
+  "total_items_sold": 231701,
+  "total_revenue_yen": 819269846,
+  "average_price_yen": 3535.89,
   "highest_price_yen": 10000,
   "lowest_price_yen": 1000,
   "sample_top_items": [
-    {
-      "id": "m25085481752",
-      "name": "POP UP PARADE ソウルイーター マカ アルバーン",
-      "price": 10000
-    },
-    {
-      "id": "m97670590726",
-      "name": "figma 432 セイバーオルタ 2.0",
-      "price": 10000
-    },
-    {
-      "id": "2JVKNXoDwe7s5Gt2tgtrhL",
-      "name": "【カメ】【未開封】ラブライブ!スクールアイドルフェスティバル 絢瀬絵里 1/7 PVC製塗装済み完成品 フィギュア 707 Love Live! School Idol Festival",
-      "price": 10000
-    },
-    {
-      "id": "m30329744948",
-      "name": "トイストーリー　ケン　人形　ブサイクバージョン",
-      "price": 10000
-    },
-    {
-      "id": "m31763351379",
-      "name": "(未開封)ぬーどるストッパーフィギュア 山姥切長義 B賞",
-      "price": 10000
-    },
-    {
-      "id": "m30293841947",
-      "name": "鬼滅の刃ニャンコ招き猫ver.壱 メガハウス (1BOX)",
-      "price": 10000
-    },
     {
       "id": "m78399160800",
       "name": "一番くじ エヴァンゲリオン新劇場版：序 A賞 初号機フィギュア",
@@ -103,6 +73,36 @@
     {
       "id": "m80303347334",
       "name": "HUNTERXHUNTER　G.I.　１番くじ　D賞　ヒソカ　フィギュア",
+      "price": 10000
+    },
+    {
+      "id": "m97508565984",
+      "name": "一番くじ　HUNTER×HUNTER D賞ヒソカ　Ｋ賞、j賞セット売り",
+      "price": 10000
+    },
+    {
+      "id": "m95657582282",
+      "name": "hunter×hunter 一番くじ　D賞　ヒソカ　フィギュア　髪下ろしVer.",
+      "price": 10000
+    },
+    {
+      "id": "m34850869113",
+      "name": "HUNTER×HUNTER 一番くじ ヒソカ 髪おろしVer.",
+      "price": 10000
+    },
+    {
+      "id": "m79694505298",
+      "name": "一番くじ HUNTER×HUNTER D賞 ヒソカ",
+      "price": 10000
+    },
+    {
+      "id": "m61084142181",
+      "name": "ハンターハンター 一番くじ 大天使の息吹 ブループラネット L賞",
+      "price": 10000
+    },
+    {
+      "id": "m33742366797",
+      "name": "一番くじHUNTER×HUNTER D賞 ヒソカ 髪下ろしVer",
       "price": 10000
     }
   ]
