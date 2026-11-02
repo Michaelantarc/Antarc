@@ -453,7 +453,7 @@
     "price": 14900
   },
   "qo8mE2FmRtZx3ESfrJLQz4": {
-    "price": 45000
+    "price": 44000
   },
   "2JVgvdJippsDnjDhnD8ZAe": {
     "price": 45985
@@ -516,7 +516,7 @@
     "price": 17777
   },
   "2JY9krH4mwUy5BWm5ySiAE": {
-    "price": 17500
+    "price": 17400
   },
   "m40481711578": {
     "price": 18999
@@ -529,5 +529,8 @@
   },
   "m40103867545": {
     "price": 29999
+  },
+  "m61212928952": {
+    "price": 19800
   }
 }
