@@ -1,20 +1,10 @@
 {
-  "total_items_sold": 226598,
-  "total_revenue_yen": 791971800,
-  "average_price_yen": 3495.05,
+  "total_items_sold": 227819,
+  "total_revenue_yen": 795890238,
+  "average_price_yen": 3493.52,
   "highest_price_yen": 10000,
   "lowest_price_yen": 1000,
   "sample_top_items": [
-    {
-      "id": "m88761812746",
-      "name": "【新品未開封】figma ファイアーエムブレムif カムイ(女) 334",
-      "price": 10000
-    },
-    {
-      "id": "m51376809458",
-      "name": "【未開封】一番くじ NARUTO 我愛羅 ラストワン賞 MASTERLISE",
-      "price": 10000
-    },
     {
       "id": "m77835644872",
       "name": "【最安値】アイズ　 キューティーハニー 1/7 スケールフィギュア　塗装済完成品",
@@ -103,6 +93,16 @@
     {
       "id": "m82092960537",
       "name": "タイトー 銀河鉄道999 スーパーメカニクス 劇場版999号 2個セット",
+      "price": 10000
+    },
+    {
+      "id": "m72694894917",
+      "name": "FINAL FANTASY VII ADVENT PIECES: LIMITED",
+      "price": 10000
+    },
+    {
+      "id": "m52328559022",
+      "name": "DXルーブジャイロ 美剣サキ仕様",
       "price": 10000
     }
   ]
