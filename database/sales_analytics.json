@@ -1,60 +1,10 @@
 {
-  "total_items_sold": 210782,
-  "total_revenue_yen": 735211842,
-  "average_price_yen": 3488.02,
+  "total_items_sold": 210711,
+  "total_revenue_yen": 734805235,
+  "average_price_yen": 3487.27,
   "highest_price_yen": 10000,
   "lowest_price_yen": 1000,
   "sample_top_items": [
-    {
-      "id": "m58321449171",
-      "name": "鬼滅の刃　一番くじ　冨岡義勇　煉獄杏寿郎　フィギュア",
-      "price": 10000
-    },
-    {
-      "id": "m83870424244",
-      "name": "一番くじ　篠澤広 C賞 フィギュア",
-      "price": 10000
-    },
-    {
-      "id": "q98WcDM9YvJzVLbrjJQaJ4",
-      "name": "GIジョー クラシファイド ゴーストバイパー&ダイアウルフ G.I. Joe Classified Series Ghost Viper & D.I.R.E. (Dread-Inducing Responsive Energy) Beasts(170)",
-      "price": 10000
-    },
-    {
-      "id": "2JX9qQeQkentVaVQRqmxs6",
-      "name": "一番くじ BLEACH 20th ラストワン賞 黒崎一護 虚 MASTERLISE フィギュア / ブリーチ BANDAI",
-      "price": 10000
-    },
-    {
-      "id": "m21504209733",
-      "name": "未開封 figma 楪いのり 「ギルティクラウン」",
-      "price": 10000
-    },
-    {
-      "id": "m82024522522",
-      "name": "Splatoon amiibo フィギュア 12体セット",
-      "price": 10000
-    },
-    {
-      "id": "m23000659385",
-      "name": "カスタム S.H.Figuarts 真骨彫 イーヴィルティガ ヘッドパーツ",
-      "price": 10000
-    },
-    {
-      "id": "m75786030762",
-      "name": "BLEACH ブリーチ　黒崎一護　フィギュア　一番くじ　Ａ賞",
-      "price": 10000
-    },
-    {
-      "id": "m63988123685",
-      "name": "CSMロックシード　呉島セット",
-      "price": 10000
-    },
-    {
-      "id": "m23934231946",
-      "name": "BE@RBRICK MARVEL キャプテン・アメリカ ウィンター・ソルジャー",
-      "price": 10000
-    },
     {
       "id": "m14339205674",
       "name": "ポケモン フィギュア コロコロショップ限定 消しゴム 塩ビ ミニフィギュア",
@@ -103,6 +53,56 @@
     {
       "id": "m27299248268",
       "name": "新品未開封 ライザ 水着Ver. 1/7 グッドスマイルカンパニー",
+      "price": 10000
+    },
+    {
+      "id": "m50945051444",
+      "name": "非正規トランスフォーマー ディフォルメサイズ オプティマスプライム似",
+      "price": 10000
+    },
+    {
+      "id": "m10300759980",
+      "name": "ジョジョの奇妙な冒険 一番くじ　ABC賞まとめ売り。",
+      "price": 10000
+    },
+    {
+      "id": "m40627814266",
+      "name": "【安心匿名対応】 一番くじ 北斗の拳 A賞 ケンシロウ B賞 レイ フィギュア",
+      "price": 10000
+    },
+    {
+      "id": "m69010822223",
+      "name": "ROBOT魂 ＜SIDE EVA＞ エヴァンゲリオン第13号機",
+      "price": 10000
+    },
+    {
+      "id": "m42223666153",
+      "name": "しろたん×初音ミク Exc∞d Creative Figure",
+      "price": 10000
+    },
+    {
+      "id": "m56176832726",
+      "name": "BE@RBRICK ディスプレイブリスターボード",
+      "price": 10000
+    },
+    {
+      "id": "m96697277227",
+      "name": "【当時物】　トランスフォーマー05 アラート",
+      "price": 10000
+    },
+    {
+      "id": "m24855733615",
+      "name": "HUNTER×HUNTER 一番くじ D賞 ナックル MASTERLISE",
+      "price": 10000
+    },
+    {
+      "id": "m99756662821",
+      "name": "一番くじ ベルセルク 宿命の双極 B賞 ガッツ MASTERLISE",
+      "price": 10000
+    },
+    {
+      "id": "m39402050643",
+      "name": "一番くじ ベルセルク B賞 ガッツ MASTERLISE 狂戦士ver.",
       "price": 10000
     }
   ]
