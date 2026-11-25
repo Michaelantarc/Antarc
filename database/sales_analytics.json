@@ -1,40 +1,10 @@
 {
-  "total_items_sold": 209803,
-  "total_revenue_yen": 729892205,
-  "average_price_yen": 3478.94,
+  "total_items_sold": 210146,
+  "total_revenue_yen": 730353876,
+  "average_price_yen": 3475.46,
   "highest_price_yen": 10000,
   "lowest_price_yen": 1000,
   "sample_top_items": [
-    {
-      "id": "2JXGTeEV6b2c6uuEt9zwJA",
-      "name": "一番くじ　BLEACH　ブリーチ　千年血戦篇　Stirring Souls vol.5　ラストワン賞 更木剣八　MASTERLISE　フィギュア　バンダイ　バンダイナムコ　（ME28-5375）",
-      "price": 10000
-    },
-    {
-      "id": "m85849632286",
-      "name": "【未開封】ハイスクール!奇面組 ミニフィギュア おまけ缶バッジ付",
-      "price": 10000
-    },
-    {
-      "id": "m13798420776",
-      "name": "一番くじ ベルセルク 宿命の双極 C賞 ドラゴンころし A賞複製",
-      "price": 10000
-    },
-    {
-      "id": "m54471637026",
-      "name": "figma ドールズフロントライン 416",
-      "price": 10000
-    },
-    {
-      "id": "m23978502469",
-      "name": "リクエスト品　ガン消し　闘士ダブルゼータ　剣士ゼータ　パープルクリア　紫",
-      "price": 10000
-    },
-    {
-      "id": "m52030605923",
-      "name": "一番くじ モンスターハンター 20周年 フィギュアセット",
-      "price": 10000
-    },
     {
       "id": "m16645384954",
       "name": "【早い者勝ち】一番くじ 銀魂 A賞 坂田銀時 フィギュア　初期　銀さん",
@@ -103,6 +73,36 @@
     {
       "id": "m61276737961",
       "name": "フィギュアーツ　ガッチャード　ガッチャードデイブレイク",
+      "price": 10000
+    },
+    {
+      "id": "m54004774094",
+      "name": "呪術廻戦 一番くじ B賞 乙骨憂太 MASTERLISE フィギュア",
+      "price": 10000
+    },
+    {
+      "id": "m82909223965",
+      "name": "一番くじ BLEACH ラストワン賞 更木剣八 MASTERLISE",
+      "price": 10000
+    },
+    {
+      "id": "m57853017885",
+      "name": "DXコードフォン&サウンドパニッシュカプセムセット",
+      "price": 10000
+    },
+    {
+      "id": "m23976348990",
+      "name": "プライズフィギュア 15点まとめ売り",
+      "price": 10000
+    },
+    {
+      "id": "m25850703242",
+      "name": "FuRyu TENITOL TALL アーリャ 牛柄コスチュームver.",
+      "price": 10000
+    },
+    {
+      "id": "m42140407464",
+      "name": "GUNDAM FIX FIGURATION METAL COMPOSITE",
       "price": 10000
     }
   ]
